@@ -1,0 +1,7 @@
+out/*
+.DS_Store
+.scannerwork/*
+rest_test.http
+backups/*
+ca_chain.crt
+*.exe
