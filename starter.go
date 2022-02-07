@@ -88,7 +88,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 
 	if completeConcurrences {
 		fmt.Printf("Automatically merge concurrent annotations")
-		codeAlternatives = updateStatusOfCodeAlternatives(toreAlternatives, len(annotationNames))
+		codeAlternatives = updateStatusOfCodeAlternatives(codeAlternatives, len(annotationNames))
 	}
 
 	var relevantAgreementFields RelevantAgreementFields
