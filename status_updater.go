@@ -1,289 +1,113 @@
 package main
 
-type ToreCodeMergeCandidate struct {
-	Tokens                    []*int
-	Tore                      string
-	annotationNameOccurrences []string
-}
-
-type WordCodeMergeCandidate struct {
+type CodeMergeCandidate struct {
 	Tokens                    []*int
 	Name                      string
-	annotationNameOccurrences []string
-}
-
-type RelationshipMergeCandidate struct {
-	Tokens                    []*int
+	Tore                      string
 	RelationshipMemberships   []*int
 	annotationNameOccurrences []string
 }
 
-func updateStatusOfToreCodeAlternatives(
-	toreAlternatives []TORECodeAlternatives,
+func updateStatusOfCodeAlternatives(
+	codeAlternatives []CodeAlternatives,
 	numberOfAnnotations int,
-) []TORECodeAlternatives {
-	var mergeCandidates []ToreCodeMergeCandidate
+) []CodeAlternatives {
+	var mergeCandidates []CodeMergeCandidate
 	var rejected [][]*int
-	for _, tore := range toreAlternatives {
+	for _, codeAlternative := range codeAlternatives {
 		if len(mergeCandidates) == 0 {
 			if len(rejected) == 0 {
-				mergeCandidates = append(mergeCandidates, ToreCodeMergeCandidate{tore.Tokens, tore.Tore, []string{tore.AnnotationName}})
+				var newCandidate = CodeMergeCandidate{
+					codeAlternative.Code.Tokens,
+					codeAlternative.Code.Name,
+					codeAlternative.Code.Tore,
+					codeAlternative.Code.RelationshipMemberships,
+					[]string{codeAlternative.AnnotationName},
+				}
+				mergeCandidates = append(mergeCandidates, newCandidate)
 			} else {
-				mergeCandidates, rejected = testToreCodeRejection(tore, mergeCandidates, rejected)
+				mergeCandidates, rejected = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
-				if testEqSlice(tore.Tokens, candidate.Tokens) {
-					if tore.Tore != candidate.Tore {
+				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
+					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
 						rejected = append(rejected, candidate.Tokens)
 						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
 					} else {
 						var isNew = true
 						for _, annoNameOccurrence := range candidate.annotationNameOccurrences {
-							if annoNameOccurrence == tore.AnnotationName {
+							if annoNameOccurrence == codeAlternative.AnnotationName {
 								isNew = false
 							}
 						}
 						if isNew {
-							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, tore.AnnotationName)
+							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, codeAlternative.AnnotationName)
 						}
 					}
 				} else {
-					mergeCandidates, rejected = testToreCodeRejection(tore, mergeCandidates, rejected)
+					mergeCandidates, rejected = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 				}
 			}
 		}
 
 	}
-	return setToreCodeMergeStatus(toreAlternatives, mergeCandidates, numberOfAnnotations)
+	return setCodeMergeStatus(codeAlternatives, mergeCandidates, numberOfAnnotations)
 }
 
-func updateStatusOfWordCodeAlternatives(
-	wordCodeAlternatives []WordCodeAlternatives,
+func setCodeMergeStatus(
+	codeAlternatives []CodeAlternatives,
+	mergeCandidates []CodeMergeCandidate,
 	numberOfAnnotations int,
-) []WordCodeAlternatives {
-	var mergeCandidates []WordCodeMergeCandidate
-	var rejected [][]*int
-	for _, wordCode := range wordCodeAlternatives {
-		if len(mergeCandidates) == 0 {
-			if len(rejected) == 0 {
-				mergeCandidates = append(mergeCandidates, WordCodeMergeCandidate{wordCode.Tokens, wordCode.Name, []string{wordCode.AnnotationName}})
-			} else {
-				mergeCandidates, rejected = testWordCodeRejection(wordCode, mergeCandidates, rejected)
-			}
-		} else {
-			for i, candidate := range mergeCandidates {
-				if testEqSlice(wordCode.Tokens, candidate.Tokens) {
-					if wordCode.Name != candidate.Name {
-						rejected = append(rejected, candidate.Tokens)
-						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
-					} else {
-						var isNew = true
-						for _, annoNameOccurrence := range candidate.annotationNameOccurrences {
-							if annoNameOccurrence == wordCode.AnnotationName {
-								isNew = false
-							}
-						}
-						if isNew {
-							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, wordCode.AnnotationName)
-						}
-					}
-				} else {
-					mergeCandidates, rejected = testWordCodeRejection(wordCode, mergeCandidates, rejected)
-				}
-			}
-		}
-
-	}
-	return setWordCodeMergeStatus(wordCodeAlternatives, mergeCandidates, numberOfAnnotations)
-}
-
-func updateStatusOfRelationshipAlternatives(
-	relationshipAlternatives []RelationshipAlternatives,
-	numberOfAnnotations int,
-) []RelationshipAlternatives {
-	var mergeCandidates []RelationshipMergeCandidate
-	var rejected [][]*int
-	for _, relationship := range relationshipAlternatives {
-		if len(mergeCandidates) == 0 {
-			if len(rejected) == 0 {
-				mergeCandidates = append(mergeCandidates, RelationshipMergeCandidate{relationship.Tokens, relationship.RelationshipMemberships, []string{relationship.AnnotationName}})
-			} else {
-				mergeCandidates, rejected = testRelationshipRejection(relationship, mergeCandidates, rejected)
-			}
-		} else {
-			for i, candidate := range mergeCandidates {
-				if testEqSlice(relationship.Tokens, candidate.Tokens) {
-					if !testEqSlice(relationship.RelationshipMemberships, candidate.RelationshipMemberships) {
-						rejected = append(rejected, candidate.Tokens)
-						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
-					} else {
-						var isNew = true
-						for _, annoNameOccurrence := range candidate.annotationNameOccurrences {
-							if annoNameOccurrence == relationship.AnnotationName {
-								isNew = false
-							}
-						}
-						if isNew {
-							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, relationship.AnnotationName)
-						}
-					}
-				} else {
-					mergeCandidates, rejected = testRelationshipRejection(relationship, mergeCandidates, rejected)
-				}
-			}
-		}
-
-	}
-	return setRelationshipMergeStatus(relationshipAlternatives, mergeCandidates, numberOfAnnotations)
-}
-
-func setToreCodeMergeStatus(
-	toreAlternatives []TORECodeAlternatives,
-	mergeCandidates []ToreCodeMergeCandidate,
-	numberOfAnnotations int,
-) []TORECodeAlternatives {
+) []CodeAlternatives {
 
 	for _, candidate := range mergeCandidates {
 		if len(candidate.annotationNameOccurrences) == numberOfAnnotations {
 			var isAccepted = false
-			for i, tore := range toreAlternatives {
+			for i, codeAlternative := range codeAlternatives {
 				if !isAccepted {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						toreAlternatives[i].MergeStatus = "Accepted"
+					if testEqSlice(candidate.Tokens, codeAlternative.Code.Tokens) {
+						codeAlternatives[i].MergeStatus = "Accepted"
 						isAccepted = true
 					}
 				} else {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						toreAlternatives[i].MergeStatus = "Declined"
+					if testEqSlice(candidate.Tokens, codeAlternative.Code.Tokens) {
+						codeAlternatives[i].MergeStatus = "Declined"
 					}
 				}
 			}
 		}
 	}
-	return toreAlternatives
+	return codeAlternatives
 }
 
-func setWordCodeMergeStatus(
-	wordCodeAlternatives []WordCodeAlternatives,
-	mergeCandidates []WordCodeMergeCandidate,
-	numberOfAnnotations int,
-) []WordCodeAlternatives {
-
-	for _, candidate := range mergeCandidates {
-		if len(candidate.annotationNameOccurrences) == numberOfAnnotations {
-			var isAccepted = false
-			for i, tore := range wordCodeAlternatives {
-				if !isAccepted {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						wordCodeAlternatives[i].MergeStatus = "Accepted"
-						isAccepted = true
-					}
-				} else {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						wordCodeAlternatives[i].MergeStatus = "Declined"
-					}
-				}
-			}
-		}
-	}
-	return wordCodeAlternatives
-}
-
-func setRelationshipMergeStatus(
-	relationshipAlternatives []RelationshipAlternatives,
-	mergeCandidates []RelationshipMergeCandidate,
-	numberOfAnnotations int,
-) []RelationshipAlternatives {
-
-	for _, candidate := range mergeCandidates {
-		if len(candidate.annotationNameOccurrences) == numberOfAnnotations {
-			var isAccepted = false
-			for i, tore := range relationshipAlternatives {
-				if !isAccepted {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						relationshipAlternatives[i].MergeStatus = "Accepted"
-						isAccepted = true
-					}
-				} else {
-					if testEqSlice(candidate.Tokens, tore.Tokens) {
-						relationshipAlternatives[i].MergeStatus = "Declined"
-					}
-				}
-			}
-		}
-	}
-	return relationshipAlternatives
-}
-
-func testToreCodeRejection(
-	tore TORECodeAlternatives,
-	mergeCandidates []ToreCodeMergeCandidate,
+func testCodeRejection(
+	codeAlternative CodeAlternatives,
+	mergeCandidates []CodeMergeCandidate,
 	rejected [][]*int,
-) ([]ToreCodeMergeCandidate, [][]*int) {
+) ([]CodeMergeCandidate, [][]*int) {
 
 	var isAReject = false
 	for _, reject := range rejected {
-		if testEqSlice(tore.Tokens, reject) {
+		if testEqSlice(codeAlternative.Code.Tokens, reject) {
 			isAReject = true
-			rejected = append(rejected, tore.Tokens)
+			rejected = append(rejected, codeAlternative.Code.Tokens)
 			for i, candidate := range mergeCandidates {
-				if testEqSlice(tore.Tokens, candidate.Tokens) {
+				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
 				}
 			}
 		}
 	}
 	if !isAReject {
-		mergeCandidates = append(mergeCandidates, ToreCodeMergeCandidate{tore.Tokens, tore.Tore, []string{tore.AnnotationName}})
-	}
-	return mergeCandidates, rejected
-}
-
-func testWordCodeRejection(
-	wordCode WordCodeAlternatives,
-	mergeCandidates []WordCodeMergeCandidate,
-	rejected [][]*int,
-) ([]WordCodeMergeCandidate, [][]*int) {
-
-	var isAReject = false
-	for _, reject := range rejected {
-		if testEqSlice(wordCode.Tokens, reject) {
-			isAReject = true
-			rejected = append(rejected, wordCode.Tokens)
-			for i, candidate := range mergeCandidates {
-				if testEqSlice(wordCode.Tokens, candidate.Tokens) {
-					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
-				}
-			}
+		var newCandidate = CodeMergeCandidate{
+			codeAlternative.Code.Tokens,
+			codeAlternative.Code.Name,
+			codeAlternative.Code.Tore,
+			codeAlternative.Code.RelationshipMemberships,
+			[]string{codeAlternative.AnnotationName},
 		}
-	}
-	if !isAReject {
-		mergeCandidates = append(mergeCandidates, WordCodeMergeCandidate{wordCode.Tokens, wordCode.Name, []string{wordCode.AnnotationName}})
-	}
-	return mergeCandidates, rejected
-}
-
-func testRelationshipRejection(
-	relationship RelationshipAlternatives,
-	mergeCandidates []RelationshipMergeCandidate,
-	rejected [][]*int,
-) ([]RelationshipMergeCandidate, [][]*int) {
-
-	var isAReject = false
-	for _, reject := range rejected {
-		if testEqSlice(relationship.Tokens, reject) {
-			isAReject = true
-			rejected = append(rejected, relationship.Tokens)
-			for i, candidate := range mergeCandidates {
-				if testEqSlice(relationship.Tokens, candidate.Tokens) {
-					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
-				}
-			}
-		}
-	}
-	if !isAReject {
-		mergeCandidates = append(mergeCandidates, RelationshipMergeCandidate{relationship.Tokens, relationship.RelationshipMemberships, []string{relationship.AnnotationName}})
+		mergeCandidates = append(mergeCandidates, newCandidate)
 	}
 	return mergeCandidates, rejected
 }

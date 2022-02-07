@@ -55,9 +55,7 @@ type RelevantAgreementFields struct {
 	Docs   []DocWrapper `json:"docs" bson:"docs"`
 	Tokens []Token      `json:"tokens" bson:"tokens"`
 
-	TORECodeAlternatives     []TORECodeAlternatives     `json:"tore_code_alternatives" bson:"tore_code_alternatives"`
-	WordCodeAlternatives     []WordCodeAlternatives     `json:"word_code_alternatives" bson:"word_code_alternatives"`
-	RelationshipAlternatives []RelationshipAlternatives `json:"relationship_alternatives" bson:"relationship_alternatives"`
+	CodeAlternatives []CodeAlternatives `json:"code_alternatives" bson:"code_alternatives"`
 }
 
 // getInfoFromAnnotations make and return the alternatives, tokens and docs for agreement
@@ -78,7 +76,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 		annotationNames = append(annotationNames, value.(string))
 	}
 
-	docs, tokens, toreAlternatives, wordCodeAlternatives, relationshipAlternatives, err := initializeInfoFromAnnotations(w, annotationNames)
+	docs, tokens, codeAlternatives, err := initializeInfoFromAnnotations(w, annotationNames)
 	if err != nil {
 		fmt.Printf("Error getting annotations, returning")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -90,18 +88,14 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 
 	if completeConcurrences {
 		fmt.Printf("Automatically merge concurrent annotations")
-		toreAlternatives = updateStatusOfToreCodeAlternatives(toreAlternatives, len(annotationNames))
-		wordCodeAlternatives = updateStatusOfWordCodeAlternatives(wordCodeAlternatives, len(annotationNames))
-		relationshipAlternatives = updateStatusOfRelationshipAlternatives(relationshipAlternatives, len(annotationNames))
+		codeAlternatives = updateStatusOfCodeAlternatives(toreAlternatives, len(annotationNames))
 	}
 
 	var relevantAgreementFields RelevantAgreementFields
 
 	relevantAgreementFields.Docs = docs
 	relevantAgreementFields.Tokens = tokens
-	relevantAgreementFields.TORECodeAlternatives = toreAlternatives
-	relevantAgreementFields.WordCodeAlternatives = wordCodeAlternatives
-	relevantAgreementFields.RelationshipAlternatives = relationshipAlternatives
+	relevantAgreementFields.CodeAlternatives = codeAlternatives
 
 	finalRelevantFields, err := json.Marshal(relevantAgreementFields)
 	if err != nil {
@@ -116,14 +110,10 @@ func initializeInfoFromAnnotations(
 ) (
 	[]DocWrapper,
 	[]Token,
-	[]TORECodeAlternatives,
-	[]WordCodeAlternatives,
-	[]RelationshipAlternatives,
+	[]CodeAlternatives,
 	error,
 ) {
-	var tores []TORECodeAlternatives
-	var wordCodes []WordCodeAlternatives
-	var relationships []RelationshipAlternatives
+	var codes []CodeAlternatives
 	var tokens []Token
 	var docs []DocWrapper
 
@@ -131,7 +121,7 @@ func initializeInfoFromAnnotations(
 		annotation, err := RESTGetAnnotation(annotationName)
 		handleErrorWithResponse(w, err, "ERROR retrieving annotation")
 		if err != nil {
-			return *new([]DocWrapper), *new([]Token), *new([]TORECodeAlternatives), *new([]WordCodeAlternatives), *new([]RelationshipAlternatives), err
+			return *new([]DocWrapper), *new([]Token), *new([]CodeAlternatives), err
 		}
 
 		log.Printf("Getting info from: " + annotationName)
@@ -146,34 +136,17 @@ func initializeInfoFromAnnotations(
 		for _, code := range annotation.Codes {
 
 			if len(code.Tokens) != 0 {
-				var toreCode = TORECodeAlternatives{
-					AnnotationName: annotationName,
-					MergeStatus:    "Pending",
-					Tokens:         code.Tokens,
-					Tore:           code.Tore,
+				var code = CodeAlternatives{
+					AnnotationName:    annotationName,
+					MergeStatus:       "Pending",
+					Code:              code,
+					TORERelationships: annotation.TORERelationships,
 				}
-				tores = append(tores, toreCode)
-
-				var wordCode = WordCodeAlternatives{
-					AnnotationName: annotationName,
-					MergeStatus:    "Pending",
-					Tokens:         code.Tokens,
-					Name:           code.Name,
-				}
-				wordCodes = append(wordCodes, wordCode)
-
-				var relationshipCode = RelationshipAlternatives{
-					AnnotationName:          annotationName,
-					MergeStatus:             "Pending",
-					Tokens:                  code.Tokens,
-					RelationshipMemberships: code.RelationshipMemberships,
-					TORERelationships:       annotation.TORERelationships,
-				}
-				relationships = append(relationships, relationshipCode)
+				codes = append(codes, code)
 			}
 		}
 
 	}
 
-	return docs, tokens, tores, wordCodes, relationships, nil
+	return docs, tokens, codes, nil
 }
