@@ -16,6 +16,7 @@ func updateStatusOfCodeAlternatives(
 ) []CodeAlternatives {
 	var mergeCandidates []CodeMergeCandidate
 	var rejected [][]*int
+	fmt.Printf("Number of codeAlternatives: %v\n\n", len(codeAlternatives))
 	for _, codeAlternative := range codeAlternatives {
 		fmt.Printf("Searching through codeAlternative %v\n\n", codeAlternative)
 		if len(mergeCandidates) == 0 {
@@ -33,7 +34,8 @@ func updateStatusOfCodeAlternatives(
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
-				fmt.Printf("Comparing to candidate %v\n\n", candidate)
+				fmt.Printf("Number of candidates %v\n\n", len(mergeCandidates))
+				//fmt.Printf("Comparing to candidate %v\n\n", candidate)
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
 						fmt.Printf("%v already found\n\n", codeAlternative)
