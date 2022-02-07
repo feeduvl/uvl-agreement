@@ -33,8 +33,10 @@ func updateStatusOfCodeAlternatives(
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
+				fmt.Printf("Comparing to candidate %v\n\n", candidate)
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
+						fmt.Printf("%v already found\n\n", codeAlternative)
 						rejected = append(rejected, candidate.Tokens)
 						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
 					} else {
@@ -45,6 +47,7 @@ func updateStatusOfCodeAlternatives(
 							}
 						}
 						if isNew {
+							fmt.Printf("%v new, is added\n\n", codeAlternative)
 							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, codeAlternative.AnnotationName)
 						}
 					}
