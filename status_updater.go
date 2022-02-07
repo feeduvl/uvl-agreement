@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type CodeMergeCandidate struct {
 	Tokens                    []*int
 	Name                      string
@@ -15,6 +17,7 @@ func updateStatusOfCodeAlternatives(
 	var mergeCandidates []CodeMergeCandidate
 	var rejected [][]*int
 	for _, codeAlternative := range codeAlternatives {
+		fmt.Printf("Searching through codeAlternative %v\n\n", codeAlternative)
 		if len(mergeCandidates) == 0 {
 			if len(rejected) == 0 {
 				var newCandidate = CodeMergeCandidate{
@@ -62,6 +65,7 @@ func setCodeMergeStatus(
 ) []CodeAlternatives {
 
 	for _, candidate := range mergeCandidates {
+		fmt.Printf("Setting status of MergeCandidate %v\n\n", candidate)
 		if len(candidate.annotationNameOccurrences) == numberOfAnnotations {
 			var isAccepted = false
 			for i, codeAlternative := range codeAlternatives {
