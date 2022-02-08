@@ -35,12 +35,14 @@ func updateStatusOfCodeAlternatives(
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
-				fmt.Printf("len(mergecandidate): %v \n\n", len(mergeCandidates))
-				fmt.Printf("mergecandidate: %v \n\n", mergeCandidates)
-				fmt.Printf("codeAlternative: %v \n\n", codeAlternative)
+				fmt.Printf(" \n len(mergecandidate): %v \n", len(mergeCandidates))
+				fmt.Printf("mergecandidate: %v \n", mergeCandidates)
+				fmt.Printf("codeAlternative: %v \n", codeAlternative)
+				fmt.Printf("rejected: %v \n", rejected)
 				var isFound = false
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
+					fmt.Printf("The candidate is found \n")
 					isFound = true
 					// When any property is changed, it is added to rejected, and removed from mergeCandidates
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
@@ -63,6 +65,7 @@ func updateStatusOfCodeAlternatives(
 				}
 				// Candidate is not found in mergeCandidates, so either it is new, or it is already rejected
 				if !isFound {
+					fmt.Printf("The candidate is not found \n")
 					mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 				}
 			}
@@ -106,10 +109,10 @@ func testCodeRejection(
 
 	var isAReject = false
 	for _, reject := range rejected {
-		// if candidate is found in rejected,
+		// if candidate is found in rejected
 		if testEqSlice(codeAlternative.Code.Tokens, reject) {
+			fmt.Printf("The candidate is found in rejected \n")
 			isAReject = true
-			//rejected = append(rejected, codeAlternative.Code.Tokens)
 			for i, candidate := range mergeCandidates {
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
@@ -120,6 +123,7 @@ func testCodeRejection(
 		}
 	}
 	if !isAReject {
+		fmt.Printf("The candidate is not found in rejected\n")
 		var newCandidate = CodeMergeCandidate{
 			codeAlternative.Code.Tokens,
 			codeAlternative.Code.Name,
