@@ -34,12 +34,13 @@ func updateStatusOfCodeAlternatives(
 				mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 			}
 		} else {
+			var isFound = false
 			for i, candidate := range mergeCandidates {
 				fmt.Printf(" \n len(mergecandidate): %v \n", len(mergeCandidates))
 				fmt.Printf("mergecandidate: %v \n", mergeCandidates)
+				fmt.Printf("current merge candidate: %v \n", candidate)
 				fmt.Printf("codeAlternative: %v \n", codeAlternative)
 				fmt.Printf("rejected: %v \n", rejected)
-				var isFound = false
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					fmt.Printf("The candidate is found \n")
