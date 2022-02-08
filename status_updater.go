@@ -36,14 +36,8 @@ func updateStatusOfCodeAlternatives(
 		} else {
 			var isFound = false
 			for i, candidate := range mergeCandidates {
-				fmt.Printf(" \n len(mergecandidate): %v \n", len(mergeCandidates))
-				fmt.Printf("mergecandidate: %v \n", mergeCandidates)
-				fmt.Printf("current merge candidate: %v \n", candidate)
-				fmt.Printf("codeAlternative: %v \n", codeAlternative)
-				fmt.Printf("rejected: %v \n", rejected)
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
-					fmt.Printf("The candidate is found \n")
 					isFound = true
 					// When any property is changed, it is added to rejected, and removed from mergeCandidates
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
@@ -67,7 +61,6 @@ func updateStatusOfCodeAlternatives(
 			}
 			// Candidate is not found in mergeCandidates, so either it is new, or it is already rejected
 			if !isFound {
-				fmt.Printf("The candidate is not found \n")
 				mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 			}
 		}
@@ -112,7 +105,6 @@ func testCodeRejection(
 	for _, reject := range rejected {
 		// if candidate is found in rejected
 		if testEqSlice(codeAlternative.Code.Tokens, reject) {
-			fmt.Printf("The candidate is found in rejected \n")
 			isAReject = true
 			for i, candidate := range mergeCandidates {
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
