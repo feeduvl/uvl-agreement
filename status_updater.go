@@ -34,7 +34,8 @@ func updateStatusOfCodeAlternatives(
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
-				//fmt.Printf("Number of candidates %v\n\n", len(mergeCandidates))
+				fmt.Printf("Number of candidates %v\n\n", len(mergeCandidates))
+				fmt.Printf("Index of candidate %v\n\n", i)
 				//fmt.Printf("Comparing to candidate %v\n\n", candidate)
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
@@ -56,6 +57,7 @@ func updateStatusOfCodeAlternatives(
 					}
 				} else {
 					mergeCandidates, rejected = testCodeRejection(codeAlternative, mergeCandidates, rejected)
+					break
 				}
 			}
 		}
@@ -102,11 +104,15 @@ func testCodeRejection(
 		if testEqSlice(codeAlternative.Code.Tokens, reject) {
 			isAReject = true
 			rejected = append(rejected, codeAlternative.Code.Tokens)
+			fmt.Printf("MergeCandidate %v\n", mergeCandidates)
+			fmt.Printf("len(MergeCandidate) %v\n", len(mergeCandidates))
 			for i, candidate := range mergeCandidates {
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
+					break
 				}
 			}
+			break
 		}
 	}
 	if !isAReject {
