@@ -36,6 +36,8 @@ func updateStatusOfCodeAlternatives(
 		} else {
 			for i, candidate := range mergeCandidates {
 				fmt.Printf("len(mergecandidate): %v \n\n", len(mergeCandidates))
+				fmt.Printf("mergecandidate: %v \n\n", mergeCandidates)
+				fmt.Printf("codeAlternative: %v \n\n", codeAlternative)
 				var isFound = false
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
