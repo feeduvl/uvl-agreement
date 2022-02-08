@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type CodeMergeCandidate struct {
 	Tokens                    []*int
 	Name                      string
@@ -33,6 +35,7 @@ func updateStatusOfCodeAlternatives(
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
+				fmt.Printf("len(mergecandidate): %v \n\n", len(mergeCandidates))
 				var isFound = false
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
