@@ -64,11 +64,11 @@ func updateStatusOfCodeAlternatives(
 						}
 					}
 				}
-				// Candidate is not found in mergeCandidates, so either it is new, or it is already rejected
-				if !isFound {
-					fmt.Printf("The candidate is not found \n")
-					mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
-				}
+			}
+			// Candidate is not found in mergeCandidates, so either it is new, or it is already rejected
+			if !isFound {
+				fmt.Printf("The candidate is not found \n")
+				mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 			}
 		}
 
