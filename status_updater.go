@@ -51,6 +51,7 @@ func updateStatusOfCodeAlternatives(
 						if isNew {
 							//fmt.Printf("%v new, is added\n\n", codeAlternative)
 							mergeCandidates[i].annotationNameOccurrences = append(mergeCandidates[i].annotationNameOccurrences, codeAlternative.AnnotationName)
+							break
 						}
 					}
 				} else {
