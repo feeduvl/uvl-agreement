@@ -17,6 +17,7 @@ func updateStatusOfCodeAlternatives(
 	for _, codeAlternative := range codeAlternatives {
 		if len(mergeCandidates) == 0 {
 			if len(rejected) == 0 {
+				// First candidate is automatically added to mergeCandidates
 				var newCandidate = CodeMergeCandidate{
 					codeAlternative.Code.Tokens,
 					codeAlternative.Code.Name,
@@ -26,15 +27,23 @@ func updateStatusOfCodeAlternatives(
 				}
 				mergeCandidates = append(mergeCandidates, newCandidate)
 			} else {
-				mergeCandidates, rejected = testCodeRejection(codeAlternative, mergeCandidates, rejected)
+				// Test, if candidate is already rejected
+				// If yes, nothing happens. If no, add candidate to mergeCandidates
+				mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 			}
 		} else {
 			for i, candidate := range mergeCandidates {
+				var isFound = false
+				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
+					isFound = true
+					// When any property is changed, it is added to rejected, and removed from mergeCandidates
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
 						rejected = append(rejected, candidate.Tokens)
 						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
+						break
 					} else {
+						// if nothing has changed, the annotationName is added
 						var isNew = true
 						for _, annoNameOccurrence := range candidate.annotationNameOccurrences {
 							if annoNameOccurrence == codeAlternative.AnnotationName {
@@ -46,9 +55,10 @@ func updateStatusOfCodeAlternatives(
 							break
 						}
 					}
-				} else {
-					mergeCandidates, rejected = testCodeRejection(codeAlternative, mergeCandidates, rejected)
-					break
+				}
+				// Candidate is not found in mergeCandidates, so either it is new, or it is already rejected
+				if !isFound {
+					mergeCandidates = testCodeRejection(codeAlternative, mergeCandidates, rejected)
 				}
 			}
 		}
@@ -87,13 +97,14 @@ func testCodeRejection(
 	codeAlternative CodeAlternatives,
 	mergeCandidates []CodeMergeCandidate,
 	rejected [][]*int,
-) ([]CodeMergeCandidate, [][]*int) {
+) []CodeMergeCandidate {
 
 	var isAReject = false
 	for _, reject := range rejected {
+		// if candidate is found in rejected,
 		if testEqSlice(codeAlternative.Code.Tokens, reject) {
 			isAReject = true
-			rejected = append(rejected, codeAlternative.Code.Tokens)
+			//rejected = append(rejected, codeAlternative.Code.Tokens)
 			for i, candidate := range mergeCandidates {
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
@@ -113,7 +124,7 @@ func testCodeRejection(
 		}
 		mergeCandidates = append(mergeCandidates, newCandidate)
 	}
-	return mergeCandidates, rejected
+	return mergeCandidates
 }
 
 func testEqSlice(a, b []*int) bool {
