@@ -117,6 +117,8 @@ func initializeInfoFromAnnotations(
 	var tokens []Token
 	var docs []DocWrapper
 
+	var indexCounter = 0
+
 	for i, annotationName := range annotationNames {
 		annotation, err := RESTGetAnnotation(annotationName)
 		handleErrorWithResponse(w, err, "ERROR retrieving annotation")
@@ -137,12 +139,14 @@ func initializeInfoFromAnnotations(
 
 			if len(code.Tokens) != 0 {
 				var code = CodeAlternatives{
+					Index:             indexCounter,
 					AnnotationName:    annotationName,
 					MergeStatus:       "Pending",
 					Code:              code,
 					TORERelationships: annotation.TORERelationships,
 				}
 				codes = append(codes, code)
+				indexCounter++
 			}
 		}
 
