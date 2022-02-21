@@ -52,8 +52,9 @@ func createKeyValuePairs(m map[string]interface{}) string {
 }
 
 type RelevantAgreementFields struct {
-	Docs   []DocWrapper `json:"docs" bson:"docs"`
-	Tokens []Token      `json:"tokens" bson:"tokens"`
+	Docs              []DocWrapper       `json:"docs" bson:"docs"`
+	Tokens            []Token            `json:"tokens" bson:"tokens"`
+	TORERelationships []TORERelationship `json:"tore_relationships" bson:"tore_relationships"`
 
 	CodeAlternatives []CodeAlternatives `json:"code_alternatives" bson:"code_alternatives"`
 }
@@ -76,7 +77,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 		annotationNames = append(annotationNames, value.(string))
 	}
 
-	docs, tokens, codeAlternatives, err := initializeInfoFromAnnotations(w, annotationNames)
+	docs, tokens, toreRelationships, codeAlternatives, err := initializeInfoFromAnnotations(w, annotationNames)
 	if err != nil {
 		fmt.Printf("Error getting annotations, returning")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -95,6 +96,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 
 	relevantAgreementFields.Docs = docs
 	relevantAgreementFields.Tokens = tokens
+	relevantAgreementFields.TORERelationships = toreRelationships
 	relevantAgreementFields.CodeAlternatives = codeAlternatives
 
 	finalRelevantFields, err := json.Marshal(relevantAgreementFields)
@@ -110,47 +112,60 @@ func initializeInfoFromAnnotations(
 ) (
 	[]DocWrapper,
 	[]Token,
+	[]TORERelationship,
 	[]CodeAlternatives,
 	error,
 ) {
 	var codes []CodeAlternatives
 	var tokens []Token
 	var docs []DocWrapper
+	var toreRelationships []TORERelationship
 
 	var indexCounter = 0
+	var relationshipIndexCounter = 0
 
 	for i, annotationName := range annotationNames {
 		annotation, err := RESTGetAnnotation(annotationName)
 		handleErrorWithResponse(w, err, "ERROR retrieving annotation")
 		if err != nil {
-			return *new([]DocWrapper), *new([]Token), *new([]CodeAlternatives), err
+			return *new([]DocWrapper), *new([]Token), *new([]TORERelationship), *new([]CodeAlternatives), err
 		}
 
 		log.Printf("Getting info from: " + annotationName)
 
-		// Tokens and docs stay constant, so they can be filled with any annotation
+		// Relevant fields of Tokens and docs stay constant, so they can be filled with any annotation
 		if i == 0 {
 			tokens = annotation.Tokens
 			docs = annotation.Docs
 		}
 
+		// Necessary to get global ToreRelationships
+		var numberOfRelationshipsInAnnotation = len(annotation.TORERelationships)
+		for i, _ := range annotation.TORERelationships {
+			*annotation.TORERelationships[i].Index += relationshipIndexCounter
+		}
+
+		toreRelationships = append(toreRelationships, annotation.TORERelationships...)
+
 		// Fill the alternatives individually with every single code
 		for _, code := range annotation.Codes {
-
+			for i, _ := range code.RelationshipMemberships {
+				*code.RelationshipMemberships[i] += relationshipIndexCounter
+			}
 			if len(code.Tokens) != 0 {
 				var code = CodeAlternatives{
-					Index:             indexCounter,
-					AnnotationName:    annotationName,
-					MergeStatus:       "Pending",
-					Code:              code,
-					TORERelationships: annotation.TORERelationships,
+					Index:          indexCounter,
+					AnnotationName: annotationName,
+					MergeStatus:    "Pending",
+					Code:           code,
 				}
 				codes = append(codes, code)
 				indexCounter++
 			}
 		}
+		relationshipIndexCounter += numberOfRelationshipsInAnnotation
 
 	}
 
-	return docs, tokens, codes, nil
+	return docs, tokens, toreRelationships, codes, nil
 }
