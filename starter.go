@@ -155,7 +155,8 @@ func initializeInfoFromAnnotations(
 				fmt.Printf("Next is assigning index to relationshipmemberships\n")
 				*code.RelationshipMemberships[i] += relationshipIndexCounter
 				for j, toreRel := range toreRelationships {
-					if toreRel.TOREEntity != nil {
+					fmt.Printf("toreRel: %v\n", toreRel)
+					if toreRel.TOREEntity != nil && toreRel.Index != nil {
 						fmt.Printf("Next istesting index of membership to toreRelIndex: %v\n", *toreRel.Index)
 						if *code.RelationshipMemberships[i] == *toreRel.Index {
 							fmt.Printf("Next istesting reassigning toreEntity: %v\n", *toreRelationships[j].TOREEntity)
