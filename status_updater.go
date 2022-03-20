@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type CodeMergeCandidate struct {
 	Tokens                    []*int
@@ -150,6 +152,7 @@ func testRelationshipsAreEqual(
 	if len(a) != len(b) {
 		return false
 	}
+	fmt.Printf("Reached testRelationshipsAreEqual, a is %v, b is %v \n", a, b)
 	var relationshipsA []TORERelationship
 	var relationshipsB []TORERelationship
 	for _, relationshipIndex := range a {
@@ -166,6 +169,7 @@ func testRelationshipsAreEqual(
 			}
 		}
 	}
+	fmt.Printf("individual relationships loaded a is %v, b is %v \n", relationshipsA, relationshipsB)
 	for _, rel1 := range relationshipsA {
 		var indicesToRemove []int
 		for j, rel2 := range relationshipsB {
