@@ -157,16 +157,20 @@ func testRelationshipsAreEqual(
 	var relationshipsB []TORERelationship
 	for _, relationshipIndex := range a {
 		for _, relationship := range relationships {
-			fmt.Printf("relationshipIndex %v, relationship.index %v \n", *relationshipIndex, *relationship.Index)
-			if *relationshipIndex == *relationship.Index {
-				relationshipsA = append(relationshipsA, relationship)
+			if relationship.Index != nil {
+				fmt.Printf("relationshipIndex %v, relationship.index %v \n", *relationshipIndex, *relationship.Index)
+				if *relationshipIndex == *relationship.Index {
+					relationshipsA = append(relationshipsA, relationship)
+				}
 			}
 		}
 	}
 	for _, relationshipIndex := range b {
 		for _, relationship := range relationships {
-			if *relationshipIndex == *relationship.Index {
-				relationshipsB = append(relationshipsB, relationship)
+			if relationship.Index != nil {
+				if *relationshipIndex == *relationship.Index {
+					relationshipsB = append(relationshipsB, relationship)
+				}
 			}
 		}
 	}
