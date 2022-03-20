@@ -89,7 +89,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 
 	if completeConcurrences {
 		fmt.Printf("Automatically merge concurrent annotations")
-		codeAlternatives = updateStatusOfCodeAlternatives(codeAlternatives, len(annotationNames))
+		codeAlternatives = updateStatusOfCodeAlternatives(codeAlternatives, toreRelationships, len(annotationNames))
 	}
 
 	var relevantAgreementFields RelevantAgreementFields
@@ -149,8 +149,14 @@ func initializeInfoFromAnnotations(
 
 		// Fill the alternatives individually with every single code
 		for _, code := range annotation.Codes {
+			*code.Index = indexCounter
 			for i, _ := range code.RelationshipMemberships {
 				*code.RelationshipMemberships[i] += relationshipIndexCounter
+				for j, toreRel := range toreRelationships {
+					if *code.RelationshipMemberships[i] == *toreRel.Index {
+						*toreRelationships[j].TOREEntity = indexCounter
+					}
+				}
 			}
 			if len(code.Tokens) != 0 {
 				var code = CodeAlternatives{

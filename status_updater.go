@@ -12,6 +12,7 @@ type CodeMergeCandidate struct {
 
 func updateStatusOfCodeAlternatives(
 	codeAlternatives []CodeAlternatives,
+	toreRelationships []TORERelationship,
 	numberOfAnnotations int,
 ) []CodeAlternatives {
 	var mergeCandidates []CodeMergeCandidate
@@ -40,7 +41,7 @@ func updateStatusOfCodeAlternatives(
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					isFound = true
 					// When any property is changed, it is added to rejected, and removed from mergeCandidates
-					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testEqSlice(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships)) {
+					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testRelationshipsAreEqual(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships, toreRelationships)) {
 						rejected = append(rejected, candidate.Tokens)
 						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
 						break
@@ -139,4 +140,43 @@ func testEqSlice(a, b []*int) bool {
 		}
 	}
 	return true
+}
+
+func testRelationshipsAreEqual(
+	a []*int,
+	b []*int,
+	relationships []TORERelationship,
+) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	var relationshipsA []TORERelationship
+	var relationshipsB []TORERelationship
+	for _, relationshipIndex := range a {
+		for _, relationship := range relationships {
+			if relationshipIndex == relationship.Index {
+				relationshipsA = append(relationshipsA, relationship)
+			}
+		}
+	}
+	for _, relationshipIndex := range b {
+		for _, relationship := range relationships {
+			if relationshipIndex == relationship.Index {
+				relationshipsB = append(relationshipsB, relationship)
+			}
+		}
+	}
+	for _, rel1 := range relationshipsA {
+		var indicesToRemove []int
+		for j, rel2 := range relationshipsB {
+			if rel1.RelationshipName == rel2.RelationshipName && testEqSlice(rel1.TargetTokens, rel2.TargetTokens) {
+				indicesToRemove = append(indicesToRemove, j)
+			}
+		}
+		for _, index := range indicesToRemove {
+			relationshipsB = append(relationshipsB[:index], relationshipsB[index+1:]...)
+		}
+		indicesToRemove = []int{}
+	}
+	return len(relationshipsB) == 0
 }
