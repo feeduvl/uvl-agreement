@@ -141,8 +141,10 @@ func initializeInfoFromAnnotations(
 
 		// Necessary to get global ToreRelationships
 		var numberOfRelationshipsInAnnotation = len(annotation.TORERelationships)
-		for i, _ := range annotation.TORERelationships {
-			*annotation.TORERelationships[i].Index += relationshipIndexCounter
+		for i, toreRel := range annotation.TORERelationships {
+			if toreRel.TOREEntity != nil && toreRel.Index != nil {
+				*annotation.TORERelationships[i].Index += relationshipIndexCounter
+			}
 		}
 
 		toreRelationships = append(toreRelationships, annotation.TORERelationships...)
