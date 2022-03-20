@@ -151,13 +151,10 @@ func initializeInfoFromAnnotations(
 
 		// Fill the alternatives individually with every single code
 		for _, code := range annotation.Codes {
-			fmt.Printf("Next is assigning index to indexcounter\n")
 			*code.Index = indexCounter
 			for i, _ := range code.RelationshipMemberships {
-				fmt.Printf("Next is assigning index to relationshipmemberships\n")
 				*code.RelationshipMemberships[i] += relationshipIndexCounter
 				for j, toreRel := range toreRelationships {
-					fmt.Printf("toreRel: %v\n", toreRel)
 					if toreRel.TOREEntity != nil && toreRel.Index != nil {
 						fmt.Printf("Next istesting index of membership to toreRelIndex: %v\n", *toreRel.Index)
 						if *code.RelationshipMemberships[i] == *toreRel.Index {
