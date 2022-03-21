@@ -188,7 +188,7 @@ func initializeInfoFromAnnotations(
 func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
 	var body map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&body)
-	fmt.Printf("getInfoFromAnnotations called: %s", createKeyValuePairs(body))
+	fmt.Printf("createAnnotationFromAgreement called: %s", createKeyValuePairs(body))
 	if err != nil {
 		fmt.Printf("ERROR decoding body: %s, body: %v\n", err, r.Body)
 		w.WriteHeader(http.StatusBadRequest)
@@ -223,8 +223,14 @@ func makeAnnotation(agreement Agreement, newAnnotationName string) Annotation {
 	toreRelationships := agreement.TORERelationships
 	codeAlternatives := agreement.CodeAlternatives
 
+	fmt.Printf("The toreRelationships: %v\n", toreRelationships)
+	fmt.Printf("The codeAlternatives: %v\n", codeAlternatives)
+
 	acceptedCodes, acceptedToreRelationships := makeAcceptedToreRelationshipsAndCodes(toreRelationships, codeAlternatives)
 	updatedTokens := updateTokens(agreement, acceptedCodes)
+
+	fmt.Printf("The acceptedCodes: %v\n", acceptedCodes)
+	fmt.Printf("The acceptedToreRelationships: %v\n", acceptedToreRelationships)
 
 	var newAnnotation = Annotation{
 		UploadedAt:        time.Now(),

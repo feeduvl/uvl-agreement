@@ -152,13 +152,11 @@ func testRelationshipsAreEqual(
 	if len(a) != len(b) {
 		return false
 	}
-	fmt.Printf("Reached testRelationshipsAreEqual, a is %v, b is %v \n", a, b)
 	var relationshipsA []TORERelationship
 	var relationshipsB []TORERelationship
 	for _, relationshipIndex := range a {
 		for _, relationship := range relationships {
 			if relationship.Index != nil {
-				fmt.Printf("relationshipIndex %v, relationship.index %v \n", *relationshipIndex, *relationship.Index)
 				if *relationshipIndex == *relationship.Index {
 					relationshipsA = append(relationshipsA, relationship)
 				}
@@ -174,7 +172,6 @@ func testRelationshipsAreEqual(
 			}
 		}
 	}
-	fmt.Printf("individual relationships loaded a is %v, b is %v \n", relationshipsA, relationshipsB)
 	for _, rel1 := range relationshipsA {
 		var indicesToRemove []int
 		for j, rel2 := range relationshipsB {
