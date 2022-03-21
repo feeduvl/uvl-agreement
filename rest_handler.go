@@ -19,7 +19,9 @@ var bearerToken = "Bearer " + os.Getenv("BEARER_TOKEN")
 
 const (
 	// agreement
-	endpointGetAnnotation = "/hitec/repository/concepts/annotation/name/"
+	endpointGetAnnotation       = "/hitec/repository/concepts/annotation/name/"
+	endpointGetAgreement        = "/hitec/repository/concepts/agreement/name/"
+	endpointPostStoreAnnotation = "/hitec/repository/concepts/store/annotation/"
 
 	GET           = "GET"
 	POST          = "POST"
@@ -86,4 +88,44 @@ func RESTGetAnnotation(annotationName string) (Annotation, error) {
 		return annotation, err
 	}
 	return annotation, err
+}
+
+// RESTGetAgreement returns agreement, err
+func RESTGetAgreement(agreementName string) (Agreement, error) {
+	requestBody := new(bytes.Buffer)
+	var agreement Agreement
+
+	// make request
+	url := baseURL + endpointGetAgreement + agreementName
+	req, _ := createRequest(GET, url, requestBody)
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("ERR get agreement %v\n", err)
+		return agreement, err
+	}
+	// parse result
+	err = json.NewDecoder(res.Body).Decode(&agreement)
+	if err != nil {
+		log.Printf("ERR parsing dataset %v\n", err)
+		return agreement, err
+	}
+	return agreement, err
+}
+
+// RESTPostStoreAnnotation returns err
+func RESTPostStoreAnnotation(annotation Annotation) error {
+	requestBody := new(bytes.Buffer)
+	_ = json.NewEncoder(requestBody).Encode(annotation)
+	url := baseURL + endpointPostStoreAnnotation
+	req, _ := createRequest(POST, url, requestBody)
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("ERR post store annotation %v\n", err)
+		return err
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	return nil
 }

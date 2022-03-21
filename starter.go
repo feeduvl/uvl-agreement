@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	//"io"
 	"log"
@@ -32,6 +33,7 @@ func makeRouter() *mux.Router {
 
 	// Init
 	router.HandleFunc("/hitec/agreement/annotationinfo/", getInfoFromAnnotations).Methods("POST")
+	router.HandleFunc("/hitec/agreement/annotationexport/", createAnnotationFromAgreement).Methods("POST")
 	return router
 }
 
@@ -180,4 +182,131 @@ func initializeInfoFromAnnotations(
 	}
 
 	return docs, tokens, toreRelationships, codes, nil
+}
+
+// createAnnotationFromAgreement create a new annotation from an agreement
+func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
+	var body map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&body)
+	fmt.Printf("getInfoFromAnnotations called: %s", createKeyValuePairs(body))
+	if err != nil {
+		fmt.Printf("ERROR decoding body: %s, body: %v\n", err, r.Body)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	agreementName := body["agreementName"].(string)
+	newAnnotationName := body["newAnnotationName"].(string)
+
+	agreement, err := RESTGetAgreement(agreementName)
+	handleErrorWithResponse(w, err, "ERROR retrieving annotation")
+
+	if agreement.IsCompleted == false {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "Failure: Agreement is not completed."})
+		return
+	}
+	newAnnotation := makeAnnotation(agreement, newAnnotationName)
+
+	err = RESTPostStoreAnnotation(newAnnotation)
+	if err != nil {
+		fmt.Printf("Failed to POST new annotation")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "New annotation created from agreement."})
+	return
+}
+
+func makeAnnotation(agreement Agreement, newAnnotationName string) Annotation {
+	toreRelationships := agreement.TORERelationships
+	codeAlternatives := agreement.CodeAlternatives
+
+	acceptedCodes, acceptedToreRelationships := makeAcceptedToreRelationshipsAndCodes(toreRelationships, codeAlternatives)
+	updatedTokens := updateTokens(agreement, acceptedCodes)
+
+	var newAnnotation = Annotation{
+		UploadedAt:        time.Now(),
+		LastUpdated:       time.Now(),
+		Name:              newAnnotationName,
+		Dataset:           agreement.Dataset,
+		Docs:              agreement.Docs,
+		Tokens:            updatedTokens,
+		Codes:             acceptedCodes,
+		TORERelationships: acceptedToreRelationships,
+	}
+
+	return newAnnotation
+
+}
+
+func updateTokens(agreement Agreement, acceptedCodes []Code) []Token {
+	var newTokens []Token
+	for _, token := range agreement.Tokens {
+		numNameCodes := 0
+		numToreCodes := 0
+		for _, acceptedCode := range acceptedCodes {
+			for _, tokenInCode := range acceptedCode.Tokens {
+				if tokenInCode == token.Index {
+					if acceptedCode.Name != "" {
+						numNameCodes++
+					}
+					if acceptedCode.Tore != "" {
+						numToreCodes++
+					}
+				}
+			}
+		}
+		var newToken = Token{
+			Index:        token.Index,
+			Name:         token.Name,
+			Lemma:        token.Lemma,
+			Pos:          token.Pos,
+			NumNameCodes: numNameCodes,
+			NumToreCodes: numToreCodes,
+		}
+		newTokens = append(newTokens, newToken)
+	}
+	return newTokens
+}
+
+func makeAcceptedToreRelationshipsAndCodes(
+	toreRelationships []TORERelationship,
+	codeAlternatives []CodeAlternatives,
+) ([]Code, []TORERelationship) {
+	codeIndex := 0
+	var acceptedCodes []Code
+	var acceptedToreRelationships []TORERelationship
+
+	for i, codeAlternative := range codeAlternatives {
+		if codeAlternative.MergeStatus == "Accepted" {
+			*codeAlternatives[i].Code.Index = codeIndex
+			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
+				for j, toreRel := range toreRelationships {
+					if usedRelIndex == toreRel.Index {
+						*toreRelationships[j].TOREEntity = codeIndex
+						acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
+						break
+					}
+				}
+			}
+			codeAlternatives[i].Code.RelationshipMemberships = []*int{}
+			acceptedCodes = append(acceptedCodes, codeAlternative.Code)
+			codeIndex++
+		}
+	}
+
+	toreRelIndex := 0
+	for i, acceptedRel := range acceptedToreRelationships {
+		*acceptedToreRelationships[i].Index = toreRelIndex
+		for j, acceptedCode := range acceptedCodes {
+			if acceptedCode.Index == acceptedRel.TOREEntity {
+				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, &toreRelIndex)
+				break
+			}
+		}
+		toreRelIndex++
+	}
+	return acceptedCodes, acceptedToreRelationships
 }
