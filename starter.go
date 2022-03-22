@@ -294,7 +294,8 @@ func makeAcceptedToreRelationshipsAndCodes(
 				}
 			}
 			codeAlternatives[i].Code.RelationshipMemberships = []*int{}
-			acceptedCodes = append(acceptedCodes, codeAlternative.Code)
+			fmt.Printf("The length of relationshipmemberships: %v\n", len(codeAlternatives[i].Code.RelationshipMemberships))
+			acceptedCodes = append(acceptedCodes, codeAlternatives[i].Code)
 			codeIndex++
 		}
 	}
