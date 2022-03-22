@@ -303,14 +303,12 @@ func makeAcceptedToreRelationshipsAndCodes(
 	toreRelIndex := 0
 	for i, acceptedRel := range acceptedToreRelationships {
 		fmt.Printf("The Toreentity: %v\n", *acceptedRel.TOREEntity)
-		fmt.Printf("Type of the Toreentity: %v\n", reflect.TypeOf(*acceptedRel.TOREEntity))
 		*acceptedToreRelationships[i].Index = toreRelIndex
 		for j, acceptedCode := range acceptedCodes {
 			fmt.Printf("The index of accepted code: %v\n", *acceptedCode.Index)
-			fmt.Printf("Type of the index of accepted code: %v\n", reflect.TypeOf(*acceptedCode.Index))
 			if *acceptedCode.Index == *acceptedRel.TOREEntity {
 				fmt.Printf("If statement worked!\n")
-				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, &toreRelIndex)
+				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, acceptedToreRelationships[i].Index)
 				break
 			} else {
 				fmt.Printf("If statement did not work!\n")
