@@ -254,7 +254,7 @@ func updateTokens(agreement Agreement, acceptedCodes []Code) []Token {
 		numToreCodes := 0
 		for _, acceptedCode := range acceptedCodes {
 			for _, tokenInCode := range acceptedCode.Tokens {
-				if tokenInCode == token.Index {
+				if *tokenInCode == *token.Index {
 					if acceptedCode.Name != "" {
 						numNameCodes++
 					}
@@ -287,10 +287,13 @@ func makeAcceptedToreRelationshipsAndCodes(
 
 	for i, codeAlternative := range codeAlternatives {
 		if codeAlternative.MergeStatus == "Accepted" {
+			fmt.Printf("Index of accepted code: %v\n", *codeAlternative.Code.Index)
 			*codeAlternatives[i].Code.Index = codeIndex
 			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
+				fmt.Printf("Index of relMembership: %v\n", *usedRelIndex)
 				for j, toreRel := range toreRelationships {
-					if usedRelIndex == toreRel.Index {
+					fmt.Printf("Index of toreRel: %v\n", *toreRel.Index)
+					if *usedRelIndex == *toreRel.Index {
 						*toreRelationships[j].TOREEntity = codeIndex
 						acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
 						break
