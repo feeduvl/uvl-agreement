@@ -158,9 +158,7 @@ func initializeInfoFromAnnotations(
 				*code.RelationshipMemberships[i] += relationshipIndexCounter
 				for j, toreRel := range toreRelationships {
 					if toreRel.TOREEntity != nil && toreRel.Index != nil {
-						fmt.Printf("Next istesting index of membership to toreRelIndex: %v\n", *toreRel.Index)
 						if *code.RelationshipMemberships[i] == *toreRel.Index {
-							fmt.Printf("Next istesting reassigning toreEntity: %v\n", *toreRelationships[j].TOREEntity)
 							*toreRelationships[j].TOREEntity = indexCounter
 						}
 					}
@@ -294,7 +292,6 @@ func makeAcceptedToreRelationshipsAndCodes(
 				}
 			}
 			codeAlternatives[i].Code.RelationshipMemberships = []*int{}
-			fmt.Printf("The length of relationshipmemberships: %v\n", len(codeAlternatives[i].Code.RelationshipMemberships))
 			acceptedCodes = append(acceptedCodes, codeAlternatives[i].Code)
 			codeIndex++
 		}
@@ -302,16 +299,12 @@ func makeAcceptedToreRelationshipsAndCodes(
 
 	toreRelIndex := 0
 	for i, acceptedRel := range acceptedToreRelationships {
-		fmt.Printf("The Toreentity: %v\n", *acceptedRel.TOREEntity)
 		*acceptedToreRelationships[i].Index = toreRelIndex
 		for j, acceptedCode := range acceptedCodes {
-			fmt.Printf("The index of accepted code: %v\n", *acceptedCode.Index)
 			if *acceptedCode.Index == *acceptedRel.TOREEntity {
-				fmt.Printf("If statement worked!\n")
 				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, acceptedToreRelationships[i].Index)
 				break
 			} else {
-				fmt.Printf("If statement did not work!\n")
 			}
 		}
 		toreRelIndex++
