@@ -223,14 +223,8 @@ func makeAnnotation(agreement Agreement, newAnnotationName string) Annotation {
 	toreRelationships := agreement.TORERelationships
 	codeAlternatives := agreement.CodeAlternatives
 
-	fmt.Printf("The toreRelationships: %v\n", toreRelationships)
-	fmt.Printf("The codeAlternatives: %v\n", codeAlternatives)
-
 	acceptedCodes, acceptedToreRelationships := makeAcceptedToreRelationshipsAndCodes(toreRelationships, codeAlternatives)
 	updatedTokens := updateTokens(agreement, acceptedCodes)
-
-	fmt.Printf("The acceptedCodes: %v\n", acceptedCodes)
-	fmt.Printf("The acceptedToreRelationships: %v\n", acceptedToreRelationships)
 
 	var newAnnotation = Annotation{
 		UploadedAt:        time.Now(),
@@ -287,13 +281,10 @@ func makeAcceptedToreRelationshipsAndCodes(
 
 	for i, codeAlternative := range codeAlternatives {
 		if codeAlternative.MergeStatus == "Accepted" {
-			fmt.Printf("Index of accepted code: %v\n", *codeAlternative.Code.Index)
 			*codeAlternatives[i].Code.Index = codeIndex
 			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
-				fmt.Printf("Index of relMembership: %v\n", *usedRelIndex)
 				for j, toreRel := range toreRelationships {
 					if toreRel.TOREEntity != nil && toreRel.RelationshipName != "" {
-						fmt.Printf("Index of toreRel: %v\n", *toreRel.Index)
 						if *usedRelIndex == *toreRel.Index {
 							*toreRelationships[j].TOREEntity = codeIndex
 							acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
@@ -312,7 +303,7 @@ func makeAcceptedToreRelationshipsAndCodes(
 	for i, acceptedRel := range acceptedToreRelationships {
 		*acceptedToreRelationships[i].Index = toreRelIndex
 		for j, acceptedCode := range acceptedCodes {
-			if acceptedCode.Index == acceptedRel.TOREEntity {
+			if *acceptedCode.Index == *acceptedRel.TOREEntity {
 				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, &toreRelIndex)
 				break
 			}
