@@ -292,11 +292,13 @@ func makeAcceptedToreRelationshipsAndCodes(
 			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
 				fmt.Printf("Index of relMembership: %v\n", *usedRelIndex)
 				for j, toreRel := range toreRelationships {
-					fmt.Printf("Index of toreRel: %v\n", *toreRel.Index)
-					if *usedRelIndex == *toreRel.Index {
-						*toreRelationships[j].TOREEntity = codeIndex
-						acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
-						break
+					if toreRel.TOREEntity != nil && toreRel.RelationshipName != "" {
+						fmt.Printf("Index of toreRel: %v\n", *toreRel.Index)
+						if *usedRelIndex == *toreRel.Index {
+							*toreRelationships[j].TOREEntity = codeIndex
+							acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
+							break
+						}
 					}
 				}
 			}
