@@ -22,6 +22,8 @@ const (
 	endpointGetAnnotation       = "/hitec/repository/concepts/annotation/name/"
 	endpointGetAgreement        = "/hitec/repository/concepts/agreement/name/"
 	endpointPostStoreAnnotation = "/hitec/repository/concepts/store/annotation/"
+	endpointGetAllTores         = "/hitec/repository/concepts/annotation/tores"
+	endpointGetAllRelationships = "/hitec/repository/concepts/annotation/relationships"
 
 	GET           = "GET"
 	POST          = "POST"
@@ -128,4 +130,48 @@ func RESTPostStoreAnnotation(annotation Annotation) error {
 	}(res.Body)
 
 	return nil
+}
+
+// RESTGetAllTores returns toreCategories, err
+func RESTGetAllTores() (ToreCategories, error) {
+	requestBody := new(bytes.Buffer)
+	var toreCategories ToreCategories
+
+	// make request
+	url := baseURL + endpointGetAllTores
+	req, _ := createRequest(GET, url, requestBody)
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("ERR get annotation %v\n", err)
+		return toreCategories, err
+	}
+	// parse result
+	err = json.NewDecoder(res.Body).Decode(&toreCategories)
+	if err != nil {
+		log.Printf("ERR parsing dataset %v\n", err)
+		return toreCategories, err
+	}
+	return toreCategories, err
+}
+
+// RESTGetAllRelationships returns toreRelationships, err
+func RESTGetAllRelationships() (ToreRelationships, error) {
+	requestBody := new(bytes.Buffer)
+	var toreRelationships ToreRelationships
+
+	// make request
+	url := baseURL + endpointGetAllTores
+	req, _ := createRequest(GET, url, requestBody)
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("ERR get annotation %v\n", err)
+		return toreRelationships, err
+	}
+	// parse result
+	err = json.NewDecoder(res.Body).Decode(&toreRelationships)
+	if err != nil {
+		log.Printf("ERR parsing dataset %v\n", err)
+		return toreRelationships, err
+	}
+	return toreRelationships, err
 }

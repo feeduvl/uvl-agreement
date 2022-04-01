@@ -34,6 +34,7 @@ func makeRouter() *mux.Router {
 	// Init
 	router.HandleFunc("/hitec/agreement/annotationinfo/", getInfoFromAnnotations).Methods("POST")
 	router.HandleFunc("/hitec/agreement/annotationexport/", createAnnotationFromAgreement).Methods("POST")
+	router.HandleFunc("/hitec/agreement/calculateKappa/", calculateKappaFromAgreement).Methods("POST")
 	return router
 }
 
@@ -51,6 +52,33 @@ func createKeyValuePairs(m map[string]interface{}) string {
 		fmt.Fprintf(b, "%s=\"%#v\"\n", key, value)
 	}
 	return b.String()
+}
+
+// calculateKappaFromAgreement make and return the kappas
+func calculateKappaFromAgreement(w http.ResponseWriter, r *http.Request) {
+	var agreement Agreement
+	err := json.NewDecoder(r.Body).Decode(&agreement)
+	fmt.Printf("calculateKappaFromAgreement called: %s", agreement.Name)
+	if err != nil {
+		fmt.Printf("ERROR decoding body: %s, body: %v\n", err, r.Body)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	toreCategories, err := RESTGetAllTores()
+	handleErrorWithResponse(w, err, "ERROR retrieving all tore categories")
+	toreRelationships, err := RESTGetAllRelationships()
+	handleErrorWithResponse(w, err, "ERROR retrieving all relationships")
+
+	fleissKappa, brennanKappa := getKappas(agreement, toreCategories, toreRelationships)
+	var body map[string]interface{}
+	body["fleissKappa"] = fleissKappa
+	body["brennanKappa"] = brennanKappa
+
+	responseBody, err := json.Marshal(body)
+	if err != nil {
+		fmt.Printf("Failed to marshal fleiss and brennan kappa")
+	}
+	w.Write(responseBody)
 }
 
 type RelevantAgreementFields struct {
