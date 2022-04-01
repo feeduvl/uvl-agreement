@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type ToreCategories struct {
 	tores []string
 }
@@ -34,6 +36,8 @@ func getKappas(
 
 	var existingRelsMap = map[int]string{}
 	for _, existingToreRel := range agreement.TORERelationships {
+		fmt.Printf("ExistingToreIndex: %v\n", *existingToreRel.Index)
+		fmt.Printf("ExistingToreRelName: %v\n", existingToreRel.RelationshipName)
 		existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
 	}
 
