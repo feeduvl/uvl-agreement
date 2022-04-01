@@ -70,7 +70,7 @@ func calculateKappaFromAgreement(w http.ResponseWriter, r *http.Request) {
 	handleErrorWithResponse(w, err, "ERROR retrieving all relationships")
 
 	fleissKappa, brennanKappa := getKappas(agreement, toreCategories, toreRelationships)
-	var body map[string]interface{}
+	var body map[string]float64
 	body["fleissKappa"] = fleissKappa
 	body["brennanKappa"] = brennanKappa
 
