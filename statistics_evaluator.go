@@ -3,11 +3,11 @@ package main
 import "fmt"
 
 type ToreCategories struct {
-	tores []string
+	tores []string `json:"tores" bson:"tores"`
 }
 type ToreRelationships struct {
-	owners            []string
-	relationshipNames []string
+	owners            []string `json:"owners" bson:"owners"`
+	relationshipNames []string `json:"relationship_names" bson:"relationship_names"`
 }
 
 func getKappas(
