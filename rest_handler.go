@@ -142,13 +142,13 @@ func RESTGetAllTores() (ToreCategories, error) {
 	req, _ := createRequest(GET, url, requestBody)
 	res, err := client.Do(req)
 	if err != nil {
-		log.Printf("ERR get annotation %v\n", err)
+		log.Printf("ERR get tores %v\n", err)
 		return toreCategories, err
 	}
 	// parse result
 	err = json.NewDecoder(res.Body).Decode(&toreCategories)
 	if err != nil {
-		log.Printf("ERR parsing dataset %v\n", err)
+		log.Printf("ERR parsing toreCategories %v\n", err)
 		return toreCategories, err
 	}
 	return toreCategories, err
@@ -160,17 +160,17 @@ func RESTGetAllRelationships() (ToreRelationships, error) {
 	var toreRelationships ToreRelationships
 
 	// make request
-	url := baseURL + endpointGetAllTores
+	url := baseURL + endpointGetAllRelationships
 	req, _ := createRequest(GET, url, requestBody)
 	res, err := client.Do(req)
 	if err != nil {
-		log.Printf("ERR get annotation %v\n", err)
+		log.Printf("ERR get relationships %v\n", err)
 		return toreRelationships, err
 	}
 	// parse result
 	err = json.NewDecoder(res.Body).Decode(&toreRelationships)
 	if err != nil {
-		log.Printf("ERR parsing dataset %v\n", err)
+		log.Printf("ERR parsing toreRelationships %v\n", err)
 		return toreRelationships, err
 	}
 	return toreRelationships, err
