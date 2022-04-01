@@ -146,7 +146,7 @@ func RESTGetAllTores() (ToreCategories, error) {
 		return toreCategories, err
 	}
 	// parse result
-	err = json.NewDecoder(res.Body).Decode(&toreCategories.tores)
+	err = json.NewDecoder(res.Body).Decode(&toreCategories)
 	if err != nil {
 		log.Printf("ERR parsing dataset %v\n", err)
 		return toreCategories, err
