@@ -36,9 +36,11 @@ func getKappas(
 
 	var existingRelsMap = map[int]string{}
 	for _, existingToreRel := range agreement.TORERelationships {
-		fmt.Printf("ExistingToreIndex: %v\n", *existingToreRel.Index)
-		fmt.Printf("ExistingToreRelName: %v\n", existingToreRel.RelationshipName)
-		existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
+		if existingToreRel.Index != nil {
+			fmt.Printf("ExistingToreIndex: %v\n", *existingToreRel.Index)
+			fmt.Printf("ExistingToreRelName: %v\n", existingToreRel.RelationshipName)
+			existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
+		}
 	}
 
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
