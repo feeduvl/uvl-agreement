@@ -69,9 +69,6 @@ func calculateKappaFromAgreement(w http.ResponseWriter, r *http.Request) {
 	toreRelationships, err := RESTGetAllRelationships()
 	handleErrorWithResponse(w, err, "ERROR retrieving all relationships")
 
-	fmt.Printf("Agreement: %v\n", agreement.Name)
-	fmt.Printf("All Tores: %v\n", toreCategories.Tores)
-	fmt.Printf("All Rels: %v\n", toreRelationships.RelationshipNames)
 	fleissKappa, brennanKappa := getKappas(agreement, toreCategories, toreRelationships)
 	var body = map[string]float64{}
 	body["fleissKappa"] = fleissKappa
@@ -121,7 +118,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("CompleteConcurrences is set to %t", completeConcurrences)
 
 	if completeConcurrences {
-		fmt.Printf("Automatically merge concurrent annotations")
+		fmt.Printf("\nAutomatically merge concurrent annotations\n")
 		codeAlternatives = updateStatusOfCodeAlternatives(codeAlternatives, toreRelationships, len(annotationNames))
 	}
 

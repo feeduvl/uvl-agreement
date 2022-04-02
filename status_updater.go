@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type CodeMergeCandidate struct {
 	Tokens                    []*int
 	Name                      string
@@ -119,7 +115,6 @@ func testCodeRejection(
 		}
 	}
 	if !isAReject {
-		fmt.Printf("The candidate is not found in rejected\n")
 		var newCandidate = CodeMergeCandidate{
 			codeAlternative.Code.Tokens,
 			codeAlternative.Code.Name,

@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type ToreCategories struct {
 	Tores []string `json:"tores" bson:"tores"`
 }
@@ -34,8 +36,9 @@ func getKappas(
 
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
 
-	dataMatrix, sumOfAllCells, unmberOfAssignedTokens := fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfAlternatives)
-	fleissKappa, brennanKappa := calculateKappas(numberOfAlternatives, dataMatrix, sumOfAllCells, unmberOfAssignedTokens)
+	dataMatrix, sumOfAllCells, numberOfAssignedTokens := fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfAlternatives)
+	fleissKappa, brennanKappa := calculateKappas(numberOfAlternatives, dataMatrix, sumOfAllCells, numberOfAssignedTokens)
+	fmt.Printf("fleiss: %v\nBrennan: %v\n", fleissKappa, brennanKappa)
 	return fleissKappa, brennanKappa
 }
 
