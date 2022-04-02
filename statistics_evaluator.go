@@ -15,6 +15,7 @@ func getKappas(
 	toreCategories ToreCategories,
 	toreRelationships ToreRelationships,
 ) (float64, float64) {
+
 	var nameSet = map[string]bool{}
 	var annotationSet = map[string]bool{}
 	for _, alternative := range agreement.CodeAlternatives {
@@ -22,33 +23,19 @@ func getKappas(
 		annotationSet[alternative.AnnotationName] = true
 	}
 
-	numberOfTokens := len(agreement.Tokens)
 	numberOfRels, numberOfCategories, numberOfWordCodes := getNumberOfCategories(nameSet, toreRelationships, toreCategories)
 
 	var numberOfAlternatives = numberOfRels * numberOfCategories * numberOfWordCodes
 
-	var dataMatrix = make([][]int, numberOfTokens)
-	for i := 0; i < numberOfTokens; i++ {
-		// looping through the slice to declare
-		// slice of slice of correct length
-		dataMatrix[i] = make([]int, numberOfAlternatives)
-	}
-
 	var existingRelsMap = map[int]string{}
 	for _, existingToreRel := range agreement.TORERelationships {
-		if existingToreRel.Index != nil {
-			fmt.Printf("ExistingToreIndex: %v\n", *existingToreRel.Index)
-			fmt.Printf("ExistingToreRelName: %v\n", existingToreRel.RelationshipName)
-			existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
-		}
+		existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
 	}
 
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
 
-	sumOfAllCells := float64(0)
-	dataMatrix, sumOfAllCells = fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, len(annotationSet))
-
-	fleissKappa, brennanKappa := calculateKappas(numberOfAlternatives, dataMatrix, sumOfAllCells, numberOfTokens)
+	dataMatrix, sumOfAllCells, unmberOfAssignedTokens := fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfAlternatives)
+	fleissKappa, brennanKappa := calculateKappas(numberOfAlternatives, dataMatrix, sumOfAllCells, unmberOfAssignedTokens)
 	return fleissKappa, brennanKappa
 }
 
@@ -83,7 +70,13 @@ func calculateKappas(
 	}
 	var pHead = sumOfPi / float64(numberOfTokens)
 
-	var fleissKappa = (pHead - pc) / (1.0 - pc)
+	var fleissKappa float64
+	// This is only for the special case, when denominator is 0
+	if (1.0 - pc) == 0.0 {
+		fleissKappa = 1.0
+	} else {
+		fleissKappa = (pHead - pc) / (1.0 - pc)
+	}
 
 	// Calculate Brennan and Prediger Kappa
 	var brennanPc = sumOfAllCells / ((sumOfAllCells + 1) * (sumOfAllCells + 1))
@@ -100,9 +93,9 @@ func fillDataMatrix(
 	existingRelsMap map[int]string,
 	numberOfCategories int,
 	numberOfRels int,
-	dataMatrix [][]int,
 	numberOfAnnotations int,
-) ([][]int, float64) {
+	numberOfAlternatives int,
+) ([][]int, float64, int) {
 	var tokenMap = map[int][]CodeAlternatives{}
 	var sumOfAllCells = 0
 
@@ -111,8 +104,19 @@ func fillDataMatrix(
 			tokenMap[*token] = append(tokenMap[*token], codeAlternative)
 		}
 	}
+
+	var dataMatrix = make([][]int, len(tokenMap))
+	for i := 0; i < len(tokenMap); i++ {
+		// looping through the slice to declare
+		// slice of slice of correct length
+		dataMatrix[i] = make([]int, numberOfAlternatives)
+	}
+	dataRow := 0
 	for _, token := range agreement.Tokens {
 		var tokenIndex = *token.Index
+		if len(tokenMap[tokenIndex]) == 0 {
+			break
+		}
 		var annotationNameSet = map[string]bool{}
 		for _, codeAlternative := range tokenMap[tokenIndex] {
 			annotationNameSet[codeAlternative.AnnotationName] = true
@@ -123,7 +127,7 @@ func fillDataMatrix(
 					var relationshipName = existingRelsMap[*memberIndex]
 					var relationshipPosition = relNameMap[relationshipName]
 					var totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
-					dataMatrix[tokenIndex][totalPosition] += 1
+					dataMatrix[dataRow][totalPosition] += 1
 					sumOfAllCells++
 				}
 			} else {
@@ -131,15 +135,16 @@ func fillDataMatrix(
 				var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
 				var relationshipPosition = 0
 				var totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
-				dataMatrix[tokenIndex][totalPosition] += 1
+				dataMatrix[dataRow][totalPosition] += 1
 				sumOfAllCells++
 			}
 		}
 		var numberOfUnassignedCodes = numberOfAnnotations - len(annotationNameSet)
-		dataMatrix[tokenIndex][0] = numberOfUnassignedCodes
+		dataMatrix[dataRow][0] = numberOfUnassignedCodes
 		sumOfAllCells += numberOfUnassignedCodes
+		dataRow++
 	}
-	return dataMatrix, float64(sumOfAllCells)
+	return dataMatrix, float64(sumOfAllCells), len(tokenMap)
 }
 
 func getNumberOfCategories(
@@ -148,8 +153,8 @@ func getNumberOfCategories(
 	toreCategories ToreCategories,
 ) (int, int, int) {
 
-	var numberOfRels = len(toreRelationships.RelationshipNames) + 1
-	var numberOfCategories = len(toreCategories.Tores) + 1
+	var numberOfRels = len(toreRelationships.relationshipNames) + 1
+	var numberOfCategories = len(toreCategories.tores) + 1
 	var numberOfWordCodes = len(nameSet)
 	if _, ok := nameSet[""]; !ok {
 		numberOfWordCodes++
@@ -185,13 +190,13 @@ func createMaps(
 		}
 	}
 
-	for _, toreCategory := range toreCategories.Tores {
+	for _, toreCategory := range toreCategories.tores {
 		if _, ok := categoryMap[toreCategory]; !ok {
 			categoryMap[toreCategory] = catMapCounter
 			catMapCounter++
 		}
 	}
-	for _, toreRelName := range toreRelationships.RelationshipNames {
+	for _, toreRelName := range toreRelationships.relationshipNames {
 		if _, ok := relNameMap[toreRelName]; !ok {
 			relNameMap[toreRelName] = relMapCounter
 			relMapCounter++
