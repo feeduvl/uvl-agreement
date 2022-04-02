@@ -83,7 +83,13 @@ func calculateKappas(
 
 	// Calculate Brennan and Prediger Kappa
 	var brennanPc = sumOfAllCells / ((sumOfAllCells + 1) * (sumOfAllCells + 1))
-	var brennanKappa = (pHead - brennanPc) / (1 - brennanPc)
+	fmt.Printf("Brennanpc: %v\n", brennanPc)
+	var brennanKappa float64
+	if (1 - brennanPc) == 0.0 {
+		brennanKappa = 1.0
+	} else {
+		brennanKappa = (pHead - brennanPc) / (1 - brennanPc)
+	}
 	return fleissKappa, brennanKappa
 }
 
