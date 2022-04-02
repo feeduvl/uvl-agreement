@@ -27,7 +27,9 @@ func getKappas(
 
 	var existingRelsMap = map[int]string{}
 	for _, existingToreRel := range agreement.TORERelationships {
-		existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
+		if existingToreRel.Index != nil {
+			existingRelsMap[*existingToreRel.Index] = existingToreRel.RelationshipName
+		}
 	}
 
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
