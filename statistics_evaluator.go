@@ -37,9 +37,7 @@ func getKappas(
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
 
 	dataMatrix, sumOfAllCells, numberOfAssignedTokens := fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfAlternatives)
-	fmt.Printf("numberOfAssignedTokens: %v\n", numberOfAssignedTokens)
 	fleissKappa, brennanKappa := calculateKappas(numberOfAlternatives, dataMatrix, sumOfAllCells, numberOfAssignedTokens)
-	fmt.Printf("fleiss: %v\nBrennan: %v\n", fleissKappa, brennanKappa)
 	return fleissKappa, brennanKappa
 }
 
@@ -74,6 +72,7 @@ func calculateKappas(
 	}
 	var pHead = sumOfPi / float64(numberOfTokens)
 	fmt.Printf("numberOfTokens: %v\n", numberOfTokens)
+	fmt.Printf("sumOfPi: %v\n", sumOfPi)
 
 	var fleissKappa float64
 	// This is only for the special case, when denominator is 0
@@ -127,7 +126,7 @@ func fillDataMatrix(
 	for _, token := range agreement.Tokens {
 		var tokenIndex = *token.Index
 		if len(tokenMap[tokenIndex]) == 0 {
-			break
+			continue
 		}
 		var annotationNameSet = map[string]bool{}
 		for _, codeAlternative := range tokenMap[tokenIndex] {
