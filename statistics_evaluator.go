@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type ToreCategories struct {
 	Tores []string `json:"tores" bson:"tores"`
 }
@@ -153,8 +151,8 @@ func getNumberOfCategories(
 	toreCategories ToreCategories,
 ) (int, int, int) {
 
-	var numberOfRels = len(toreRelationships.relationshipNames) + 1
-	var numberOfCategories = len(toreCategories.tores) + 1
+	var numberOfRels = len(toreRelationships.RelationshipNames) + 1
+	var numberOfCategories = len(toreCategories.Tores) + 1
 	var numberOfWordCodes = len(nameSet)
 	if _, ok := nameSet[""]; !ok {
 		numberOfWordCodes++
@@ -190,13 +188,13 @@ func createMaps(
 		}
 	}
 
-	for _, toreCategory := range toreCategories.tores {
+	for _, toreCategory := range toreCategories.Tores {
 		if _, ok := categoryMap[toreCategory]; !ok {
 			categoryMap[toreCategory] = catMapCounter
 			catMapCounter++
 		}
 	}
-	for _, toreRelName := range toreRelationships.relationshipNames {
+	for _, toreRelName := range toreRelationships.RelationshipNames {
 		if _, ok := relNameMap[toreRelName]; !ok {
 			relNameMap[toreRelName] = relMapCounter
 			relMapCounter++
