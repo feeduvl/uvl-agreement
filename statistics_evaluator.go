@@ -52,8 +52,6 @@ func calculateKappas(
 	numberOfTokens int,
 ) (float64, float64) {
 	// Calculate Fleiss Kappa
-
-	// Calculate probabilities of all columns, some of pj should be 1
 	var pj = make([]float64, numberOfAlternatives)
 	var pc = float64(0)
 	for j := 0; j < numberOfAlternatives; j++ {
@@ -64,8 +62,6 @@ func calculateKappas(
 		pj[j] = float64(sumOfColumn) / sumOfAllCells
 		pc += pj[j] * pj[j]
 	}
-
-	// Calculate rowwise
 	var pi = make([]float64, numberOfTokens)
 	var sumOfPi = float64(0)
 	for i := 0; i < numberOfTokens; i++ {
@@ -78,7 +74,6 @@ func calculateKappas(
 		pi[i] = (addedSquaresOfRow - sumOfCodesInRow) / (sumOfCodesInRow * (sumOfCodesInRow - 1))
 		sumOfPi += pi[i]
 	}
-
 	var pHead = sumOfPi / float64(numberOfTokens)
 
 	var fleissKappa float64
@@ -89,14 +84,9 @@ func calculateKappas(
 		fleissKappa = (pHead - pc) / (1.0 - pc)
 	}
 
-	// Calculate Brennan and Prediger Kappa, using some calculations from before
+	// Calculate Brennan and Prediger Kappa
 	var brennanPc = sumOfAllCells / ((sumOfAllCells + 1) * (sumOfAllCells + 1))
-	var brennanKappa float64
-	if (1 - brennanPc) == 0.0 {
-		brennanKappa = 1.0
-	} else {
-		brennanKappa = (pHead - brennanPc) / (1 - brennanPc)
-	}
+	var brennanKappa = (pHead - brennanPc) / (1 - brennanPc)
 	return fleissKappa, brennanKappa
 }
 
@@ -115,10 +105,12 @@ func fillDataMatrix(
 	var tokenMap = map[int][]CodeAlternatives{}
 	var sumOfAllCells = 0
 
-	// Map to look up all codes for tokens
 	for _, codeAlternative := range codeAlternatives {
-		for _, token := range codeAlternative.Code.Tokens {
-			tokenMap[*token] = append(tokenMap[*token], codeAlternative)
+		// Ignore declined
+		if codeAlternative.MergeStatus != "Declined" {
+			for _, token := range codeAlternative.Code.Tokens {
+				tokenMap[*token] = append(tokenMap[*token], codeAlternative)
+			}
 		}
 	}
 
@@ -129,40 +121,43 @@ func fillDataMatrix(
 		dataMatrix[i] = make([]int, numberOfAlternatives)
 	}
 	dataRow := 0
-
 	for _, token := range agreement.Tokens {
 		var tokenIndex = *token.Index
-		// If tokenis not annotated, it is skipped
 		if len(tokenMap[tokenIndex]) == 0 {
 			continue
 		}
+		var acceptedFieldToFill = 0
 		var annotationNameSet = map[string]bool{}
 		for _, codeAlternative := range tokenMap[tokenIndex] {
+			var totalPosition = 0
 			annotationNameSet[codeAlternative.AnnotationName] = true
-			// If there are relationship-memberships, this calculates the correct position
 			if len(codeAlternative.Code.RelationshipMemberships) != 0 {
 				for _, memberIndex := range codeAlternative.Code.RelationshipMemberships {
 					var categoryPosition = categoryMap[codeAlternative.Code.Tore]
 					var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
 					var relationshipName = existingRelsMap[*memberIndex]
 					var relationshipPosition = relNameMap[relationshipName]
-					var totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
+					totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
 					dataMatrix[dataRow][totalPosition] += 1
 					sumOfAllCells++
 				}
 			} else {
-				// Otherwise the relationshipPosition is set to 0, and this calculates the correct position
 				var categoryPosition = categoryMap[codeAlternative.Code.Tore]
 				var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
 				var relationshipPosition = 0
-				var totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
+				totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
 				dataMatrix[dataRow][totalPosition] += 1
 				sumOfAllCells++
 			}
+			if codeAlternative.MergeStatus == "Accepted" {
+				acceptedFieldToFill = totalPosition
+			}
 		}
 		var numberOfUnassignedCodes = numberOfAnnotations - len(annotationNameSet)
-		dataMatrix[dataRow][0] = numberOfUnassignedCodes
-		sumOfAllCells += numberOfUnassignedCodes
+		if numberOfUnassignedCodes > 0 {
+			dataMatrix[dataRow][acceptedFieldToFill] += numberOfUnassignedCodes
+			sumOfAllCells += numberOfUnassignedCodes
+		}
 		dataRow++
 	}
 	return dataMatrix, float64(sumOfAllCells), len(tokenMap)
@@ -174,7 +169,6 @@ func getNumberOfRelsCategoriesAndWordCodes(
 	toreCategories ToreCategories,
 ) (int, int, int) {
 
-	// Add 1 for each entry, to get empty categories
 	var numberOfRels = len(toreRelationships.RelationshipNames) + 1
 	var numberOfCategories = len(toreCategories.Tores) + 1
 	var numberOfWordCodes = len(nameSet)
@@ -185,7 +179,6 @@ func getNumberOfRelsCategoriesAndWordCodes(
 	return numberOfRels, numberOfCategories, numberOfWordCodes
 }
 
-// Used to look up position in datamatrix
 func createMaps(
 	agreement Agreement,
 	toreCategories ToreCategories,
