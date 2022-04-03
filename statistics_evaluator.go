@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type ToreCategories struct {
 	Tores []string `json:"tores" bson:"tores"`
 }
@@ -93,8 +91,6 @@ func calculateKappas(
 
 	// Calculate Brennan and Prediger Kappa, using some calculations from before
 	var brennanPc = sumOfAllCells / ((sumOfAllCells + 1) * (sumOfAllCells + 1))
-	fmt.Printf("Brennanpc: %v\n", brennanPc)
-	fmt.Printf("phead: %v\n", pHead)
 	var brennanKappa float64
 	if (1 - brennanPc) == 0.0 {
 		brennanKappa = 1.0
