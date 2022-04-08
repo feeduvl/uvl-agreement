@@ -90,6 +90,40 @@ func calculateKappas(
 	return fleissKappa, brennanKappa
 }
 
+func calculatePosition(
+	codeAlternative CodeAlternatives,
+	wordCodeMap map[string]int,
+	categoryMap map[string]int,
+	relNameMap map[string]int,
+	existingRelsMap map[int]string,
+	numberOfCategories int,
+	numberOfRels int,
+	dataMatrix [][]int,
+	sumOfAllCells int,
+	dataRow int,
+) int {
+	var totalPosition = 0
+	if len(codeAlternative.Code.RelationshipMemberships) != 0 {
+		for _, memberIndex := range codeAlternative.Code.RelationshipMemberships {
+			var categoryPosition = categoryMap[codeAlternative.Code.Tore]
+			var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
+			var relationshipName = existingRelsMap[*memberIndex]
+			var relationshipPosition = relNameMap[relationshipName]
+			totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
+			dataMatrix[dataRow][totalPosition] += 1
+			sumOfAllCells++
+		}
+	} else {
+		var categoryPosition = categoryMap[codeAlternative.Code.Tore]
+		var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
+		var relationshipPosition = 0
+		totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
+		dataMatrix[dataRow][totalPosition] += 1
+		sumOfAllCells++
+	}
+	return totalPosition
+}
+
 func fillDataMatrix(
 	codeAlternatives []CodeAlternatives,
 	agreement Agreement,
@@ -127,31 +161,22 @@ func fillDataMatrix(
 			continue
 		}
 		var acceptedFieldToFill = 0
+		var isFirstAccepted = true
 		var annotationNameSet = map[string]bool{}
 		for _, codeAlternative := range tokenMap[tokenIndex] {
-			var totalPosition = 0
-			annotationNameSet[codeAlternative.AnnotationName] = true
-			if len(codeAlternative.Code.RelationshipMemberships) != 0 {
-				for _, memberIndex := range codeAlternative.Code.RelationshipMemberships {
-					var categoryPosition = categoryMap[codeAlternative.Code.Tore]
-					var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
-					var relationshipName = existingRelsMap[*memberIndex]
-					var relationshipPosition = relNameMap[relationshipName]
-					totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
-					dataMatrix[dataRow][totalPosition] += 1
+			if codeAlternative.MergeStatus == "Accepted" {
+				if isFirstAccepted {
+					totalPosition := calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, sumOfAllCells, dataRow)
+					acceptedFieldToFill = totalPosition
+					isFirstAccepted = false
+				} else {
+					dataMatrix[dataRow][acceptedFieldToFill] += 1
 					sumOfAllCells++
 				}
 			} else {
-				var categoryPosition = categoryMap[codeAlternative.Code.Tore]
-				var wordCodePosition = wordCodeMap[codeAlternative.Code.Name]
-				var relationshipPosition = 0
-				totalPosition = (wordCodePosition * numberOfCategories * numberOfRels) + (categoryPosition * numberOfRels) + relationshipPosition
-				dataMatrix[dataRow][totalPosition] += 1
-				sumOfAllCells++
+				calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, sumOfAllCells, dataRow)
 			}
-			if codeAlternative.MergeStatus == "Accepted" {
-				acceptedFieldToFill = totalPosition
-			}
+			annotationNameSet[codeAlternative.AnnotationName] = true
 		}
 		var numberOfUnassignedCodes = numberOfAnnotations - len(annotationNameSet)
 		if numberOfUnassignedCodes > 0 {
