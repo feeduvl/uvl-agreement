@@ -38,9 +38,8 @@ func getKappas(
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
 
 	// Datamatrix containing codes for all tokens
-	dataMatrix, sumOfAllCells, numberOfAssignedTokens := fillDataMatrix(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfCategoryAlternatives)
-
-	fleissKappa, brennanKappa := calculateKappas(numberOfCategoryAlternatives, dataMatrix, sumOfAllCells, numberOfAssignedTokens)
+	dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens := fillDataMatrices(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfCategoryAlternatives)
+	fleissKappa, brennanKappa := calculateKappas(numberOfCategoryAlternatives, dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens)
 
 	return fleissKappa, brennanKappa
 }
@@ -48,10 +47,12 @@ func getKappas(
 func calculateKappas(
 	numberOfAlternatives int,
 	dataMatrix [][]int,
+	dataMatrixForRowCalculation [][]int,
 	sumOfAllCells float64,
 	numberOfTokens int,
 ) (float64, float64) {
 	// Calculate Fleiss Kappa
+
 	var pj = make([]float64, numberOfAlternatives)
 	var pc = float64(0)
 	for j := 0; j < numberOfAlternatives; j++ {
@@ -68,8 +69,8 @@ func calculateKappas(
 		var sumOfCodesInRow = float64(0)
 		var addedSquaresOfRow = float64(0)
 		for j := 0; j < numberOfAlternatives; j++ {
-			sumOfCodesInRow += float64(dataMatrix[i][j])
-			addedSquaresOfRow += float64(dataMatrix[i][j] * dataMatrix[i][j])
+			sumOfCodesInRow += float64(dataMatrixForRowCalculation[i][j])
+			addedSquaresOfRow += float64(dataMatrixForRowCalculation[i][j] * dataMatrixForRowCalculation[i][j])
 		}
 		pi[i] = (addedSquaresOfRow - sumOfCodesInRow) / (sumOfCodesInRow * (sumOfCodesInRow - 1))
 		sumOfPi += pi[i]
@@ -101,7 +102,7 @@ func calculatePosition(
 	dataMatrix [][]int,
 	sumOfAllCells int,
 	dataRow int,
-) int {
+) (int, int) {
 	var totalPosition = 0
 	if len(codeAlternative.Code.RelationshipMemberships) != 0 {
 		for _, memberIndex := range codeAlternative.Code.RelationshipMemberships {
@@ -121,10 +122,10 @@ func calculatePosition(
 		dataMatrix[dataRow][totalPosition] += 1
 		sumOfAllCells++
 	}
-	return totalPosition
+	return totalPosition, sumOfAllCells
 }
 
-func fillDataMatrix(
+func fillDataMatrices(
 	codeAlternatives []CodeAlternatives,
 	agreement Agreement,
 	wordCodeMap map[string]int,
@@ -135,7 +136,7 @@ func fillDataMatrix(
 	numberOfRels int,
 	numberOfAnnotations int,
 	numberOfAlternatives int,
-) ([][]int, float64, int) {
+) ([][]int, [][]int, float64, int) {
 	var tokenMap = map[int][]CodeAlternatives{}
 	var sumOfAllCells = 0
 
@@ -149,10 +150,12 @@ func fillDataMatrix(
 	}
 
 	var dataMatrix = make([][]int, len(tokenMap))
+	var dataMatrixForRowCalculations = make([][]int, len(tokenMap))
 	for i := 0; i < len(tokenMap); i++ {
 		// looping through the slice to declare
 		// slice of slice of correct length
 		dataMatrix[i] = make([]int, numberOfAlternatives)
+		dataMatrixForRowCalculations[i] = make([]int, numberOfAlternatives)
 	}
 	dataRow := 0
 	for _, token := range agreement.Tokens {
@@ -164,28 +167,30 @@ func fillDataMatrix(
 		var isFirstAccepted = true
 		var annotationNameSet = map[string]bool{}
 		for _, codeAlternative := range tokenMap[tokenIndex] {
+			_, sumOfAllCells = calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, sumOfAllCells, dataRow)
 			if codeAlternative.MergeStatus == "Accepted" {
 				if isFirstAccepted {
-					totalPosition := calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, sumOfAllCells, dataRow)
+					var totalPosition int
+					totalPosition, _ = calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrixForRowCalculations, sumOfAllCells, dataRow)
 					acceptedFieldToFill = totalPosition
 					isFirstAccepted = false
 				} else {
-					dataMatrix[dataRow][acceptedFieldToFill] += 1
-					sumOfAllCells++
+					dataMatrixForRowCalculations[dataRow][acceptedFieldToFill] += 1
 				}
 			} else {
-				calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrix, sumOfAllCells, dataRow)
+				calculatePosition(codeAlternative, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, dataMatrixForRowCalculations, sumOfAllCells, dataRow)
 			}
 			annotationNameSet[codeAlternative.AnnotationName] = true
 		}
 		var numberOfUnassignedCodes = numberOfAnnotations - len(annotationNameSet)
 		if numberOfUnassignedCodes > 0 {
 			dataMatrix[dataRow][acceptedFieldToFill] += numberOfUnassignedCodes
+			dataMatrixForRowCalculations[dataRow][acceptedFieldToFill] += numberOfUnassignedCodes
 			sumOfAllCells += numberOfUnassignedCodes
 		}
 		dataRow++
 	}
-	return dataMatrix, float64(sumOfAllCells), len(tokenMap)
+	return dataMatrix, dataMatrixForRowCalculations, float64(sumOfAllCells), len(tokenMap)
 }
 
 func getNumberOfRelsCategoriesAndWordCodes(
