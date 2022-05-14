@@ -181,7 +181,6 @@ func initializeInfoFromAnnotations(
 
 		// Fill the alternatives individually with every single code
 		for _, code := range annotation.Codes {
-			*code.Index = indexCounter
 			for i, _ := range code.RelationshipMemberships {
 				*code.RelationshipMemberships[i] += relationshipIndexCounter
 				for j, toreRel := range toreRelationships {
