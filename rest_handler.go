@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -98,7 +99,7 @@ func RESTGetAgreement(agreementName string) (Agreement, error) {
 	var agreement Agreement
 
 	// make request
-	url := baseURL + endpointGetAgreement + agreementName
+	url := baseURL + endpointGetAgreement + url.QueryEscape(agreementName)
 	req, _ := createRequest(GET, url, requestBody)
 	res, err := client.Do(req)
 	if err != nil {
