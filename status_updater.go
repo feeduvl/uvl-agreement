@@ -132,7 +132,13 @@ func testEqSlice(a, b []*int) bool {
 		return false
 	}
 	for i := range a {
-		if *a[i] != *b[i] {
+		found := false
+		for j := range b {
+			if *a[i] == *b[j] {
+				found = true
+			}
+		}
+		if !found {
 			return false
 		}
 	}
