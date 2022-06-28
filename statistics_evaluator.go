@@ -40,10 +40,10 @@ func getKappas(
 	// Datamatrix containing codes for all tokens
 	dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens := fillDataMatrices(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfCategoryAlternatives)
 	fleissKappa, brennanKappa := calculateKappas(numberOfCategoryAlternatives, dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens)
-	if fleissKappa < 0 {
+	if (fleissKappa < 0) || (fleissKappa != fleissKappa) {
 		fleissKappa = 0.0
 	}
-	if brennanKappa < 0 {
+	if (brennanKappa < 0) || (brennanKappa != brennanKappa) {
 		brennanKappa = 0.0
 	}
 	return fleissKappa, brennanKappa
