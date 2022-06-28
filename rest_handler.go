@@ -110,7 +110,6 @@ func RESTGetAgreement(agreementName string) (Agreement, error) {
 	err = json.NewDecoder(res.Body).Decode(&agreement)
 	if err != nil {
 		log.Printf("ERR parsing agreement %v\n", err)
-		log.Printf("this is the result: %v\n", res.Body)
 		return agreement, err
 	}
 	return agreement, err
