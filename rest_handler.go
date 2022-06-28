@@ -77,7 +77,7 @@ func RESTGetAnnotation(annotationName string) (Annotation, error) {
 	var annotation Annotation
 
 	// make request
-	url := baseURL + endpointGetAnnotation + annotationName
+	url := baseURL + endpointGetAnnotation + url.QueryEscape(annotationName)
 	req, _ := createRequest(GET, url, requestBody)
 	res, err := client.Do(req)
 	if err != nil {
@@ -87,7 +87,7 @@ func RESTGetAnnotation(annotationName string) (Annotation, error) {
 	// parse result
 	err = json.NewDecoder(res.Body).Decode(&annotation)
 	if err != nil {
-		log.Printf("ERR parsing dataset %v\n", err)
+		log.Printf("ERR parsing annotation %v\n", err)
 		return annotation, err
 	}
 	return annotation, err
@@ -109,7 +109,8 @@ func RESTGetAgreement(agreementName string) (Agreement, error) {
 	// parse result
 	err = json.NewDecoder(res.Body).Decode(&agreement)
 	if err != nil {
-		log.Printf("ERR parsing dataset %v\n", err)
+		log.Printf("ERR parsing agreement %v\n", err)
+		log.Printf("this is the result: %v\n", res.Body)
 		return agreement, err
 	}
 	return agreement, err
