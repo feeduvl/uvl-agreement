@@ -316,7 +316,7 @@ func makeAcceptedToreRelationshipsAndCodes(
 			*codeAlternatives[i].Code.Index = codeIndex
 			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
 				for j, toreRel := range toreRelationships {
-					if toreRel.TOREEntity != nil && toreRel.RelationshipName != "" {
+					if toreRel.TOREEntity != nil {
 						if *usedRelIndex == *toreRel.Index {
 							*toreRelationships[j].TOREEntity = codeIndex
 							acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
