@@ -211,12 +211,13 @@ func initializeInfoFromAnnotations(
 
 // createAnnotationFromAgreement create a new annotation from an agreement
 func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
+	hasError := false
 	var body map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&body)
 	fmt.Printf("createAnnotationFromAgreement called: %s", createKeyValuePairs(body))
 	if err != nil {
 		fmt.Printf("ERROR decoding body: %s, body: %v\n", err, r.Body)
-		w.WriteHeader(http.StatusBadRequest)
+		hasError = true
 		return
 	}
 
@@ -236,11 +237,16 @@ func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
 	err = RESTPostStoreAnnotation(newAnnotation)
 	if err != nil {
 		fmt.Printf("Failed to POST new annotation")
+		hasError = true
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "New annotation created from agreement."})
+	if hasError {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "Annotation export failed!"})
+	} else {
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "New annotation created from agreement."})
+	}
 	return
 }
 
