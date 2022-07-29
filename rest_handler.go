@@ -19,7 +19,6 @@ var baseURL = os.Getenv("BASE_URL")
 var bearerToken = "Bearer " + os.Getenv("BEARER_TOKEN")
 
 const (
-	// agreement
 	endpointGetAnnotation       = "/hitec/repository/concepts/annotation/name/"
 	endpointGetAgreement        = "/hitec/repository/concepts/agreement/name/"
 	endpointPostStoreAnnotation = "/hitec/repository/concepts/store/annotation/"
@@ -31,8 +30,6 @@ const (
 	AUTHORIZATION = "Authorization"
 	ACCEPT        = "Accept"
 	TYPE_JSON     = "application/json"
-
-	errJsonMessageTemplate = "ERR - json formatting error: %v\n"
 )
 
 var client = getHTTPClient()
@@ -115,8 +112,8 @@ func RESTGetAgreement(agreementName string) (Agreement, error) {
 	return agreement, err
 }
 
-// RESTPostStoreAnnotation returns err
-func RESTPostStoreAnnotation(annotation Annotation) error {
+// RESTPostAnnotation returns err
+func RESTPostAnnotation(annotation Annotation) error {
 	requestBody := new(bytes.Buffer)
 	_ = json.NewEncoder(requestBody).Encode(annotation)
 	url := baseURL + endpointPostStoreAnnotation

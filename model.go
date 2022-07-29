@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// The Annotation model
-
 type DocWrapper struct {
 	Name       string `json:"name" bson:"name"`
 	BeginIndex *int   `json:"begin_index" bson:"begin_index"`
@@ -49,9 +47,6 @@ type Annotation struct {
 	TORERelationships []TORERelationship `json:"tore_relationships" bson:"tore_relationships"`
 }
 
-// end Annotation model
-// The Agreement model
-
 // AgreementStatistics model, the initial and current kappas. Name is unique
 type AgreementStatistics struct {
 	KappaName    string  `validate:"nonzero" json:"kappa_name" bson:"kappa_name"`
@@ -85,50 +80,6 @@ type Agreement struct {
 	AgreementStatistics []AgreementStatistics `json:"agreement_statistics" bson:"agreement_statistics"`
 
 	IsCompleted bool `json:"is_completed" bson:"is_completed"`
-}
-
-// end Agreement model
-
-// Dataset model
-type Dataset struct {
-	UploadedAt  time.Time      `json:"uploaded_at"`
-	Name        string         `json:"name"`
-	Size        int            `json:"size"`
-	Documents   []Document     `json:"documents"`
-	GroundTruth []TruthElement `json:"ground_truth" bson:"ground_truth"`
-}
-
-//TruthElement model
-type TruthElement struct {
-	Id    string `json:"id" bson:"id"`
-	Value string `json:"value"  bson:"value"`
-}
-
-// Document model
-type Document struct {
-	Number int    `json:"number"`
-	Text   string `json:"text"`
-	Id     string `json:"id"`
-}
-
-// Result model
-type Result struct {
-	Method      string                 `json:"method"`
-	Status      string                 `json:"status"`
-	StartedAt   time.Time              `json:"started_at"`
-	DatasetName string                 `json:"dataset_name"`
-	Params      map[string]string      `json:"params"`
-	Topics      map[string]interface{} `json:"topics"`
-	DocTopic    map[string]interface{} `json:"doc_topic"`
-	Metrics     map[string]interface{} `json:"metrics"`
-	Name        string                 `json:"name"`
-}
-
-// Run model
-type Run struct {
-	Method  string            `json:"method"`
-	Dataset Dataset           `json:"dataset"`
-	Params  map[string]string `json:"params"`
 }
 
 // ResponseMessage model

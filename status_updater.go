@@ -38,7 +38,7 @@ func updateStatusOfCodeAlternatives(
 				// Candidate is already in mergeCandidates
 				if testEqSlice(codeAlternative.Code.Tokens, candidate.Tokens) {
 					isFound = true
-					// When any property is changed, it is added to rejected, and removed from mergeCandidates
+					// When any property is different, it is added to rejected, and removed from mergeCandidates
 					if (codeAlternative.Code.Tore != candidate.Tore) || (codeAlternative.Code.Name != candidate.Name) || (!testRelationshipsAreEqual(codeAlternative.Code.RelationshipMemberships, candidate.RelationshipMemberships, toreRelationships)) {
 						rejected = append(rejected, candidate.Tokens)
 						mergeCandidates = append(mergeCandidates[:i], mergeCandidates[i+1:]...)
@@ -127,6 +127,7 @@ func testCodeRejection(
 	return mergeCandidates
 }
 
+// Returns true, if two lists of integer-pointers contain the same elements, independent of the order
 func testEqSlice(a, b []*int) bool {
 	if len(a) != len(b) {
 		return false
@@ -145,6 +146,7 @@ func testEqSlice(a, b []*int) bool {
 	return true
 }
 
+// Returns true, if two lists of TORERelationships contain the same elements, independent of the order
 func testRelationshipsAreEqual(
 	a []*int,
 	b []*int,
@@ -155,6 +157,7 @@ func testRelationshipsAreEqual(
 	}
 	var relationshipsA []TORERelationship
 	var relationshipsB []TORERelationship
+	// Filter all relationships that are null from a, and translate indices to TORERelationships
 	for _, relationshipIndex := range a {
 		for _, relationship := range relationships {
 			if relationship.Index != nil {
@@ -164,6 +167,7 @@ func testRelationshipsAreEqual(
 			}
 		}
 	}
+	// Filter all relationships that are null from b, and translate indices to TORERelationships
 	for _, relationshipIndex := range b {
 		for _, relationship := range relationships {
 			if relationship.Index != nil {
@@ -173,6 +177,7 @@ func testRelationshipsAreEqual(
 			}
 		}
 	}
+	// Compare relationshipNames and lists of TargetTokens, remove them from b if the same
 	for _, rel1 := range relationshipsA {
 		var indicesToRemove []int
 		for j, rel2 := range relationshipsB {
@@ -185,5 +190,6 @@ func testRelationshipsAreEqual(
 		}
 		indicesToRemove = []int{}
 	}
+	// If no more elements in b, the two lists are the same
 	return len(relationshipsB) == 0
 }

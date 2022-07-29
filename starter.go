@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	//"io"
 	"log"
@@ -64,11 +63,14 @@ func calculateKappaFromAgreement(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// Get all possible categories and relationship types for calculation of kappas
 	toreCategories, err := RESTGetAllTores()
 	handleErrorWithResponse(w, err, "ERROR retrieving all tore categories")
 	toreRelationships, err := RESTGetAllRelationships()
 	handleErrorWithResponse(w, err, "ERROR retrieving all relationships")
 
+	// Get and parse kappas
 	fleissKappa, brennanKappa := getKappas(agreement, toreCategories, toreRelationships)
 	fmt.Printf("fleiss kappa is %v, brenan kappa is %v\n", fleissKappa, brennanKappa)
 	var body = map[string]float64{}
@@ -82,14 +84,6 @@ func calculateKappaFromAgreement(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseBody)
 }
 
-type RelevantAgreementFields struct {
-	Docs              []DocWrapper       `json:"docs" bson:"docs"`
-	Tokens            []Token            `json:"tokens" bson:"tokens"`
-	TORERelationships []TORERelationship `json:"tore_relationships" bson:"tore_relationships"`
-
-	CodeAlternatives []CodeAlternatives `json:"code_alternatives" bson:"code_alternatives"`
-}
-
 // getInfoFromAnnotations make and return the alternatives, tokens and docs for agreement
 func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 	var body map[string]interface{}
@@ -101,6 +95,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// get all relevant annotation fields for an agreement
 	var annotationNames []string
 	bodyAnnotationNames := body["annotationNames"].([]interface{})
 	for _, value := range bodyAnnotationNames {
@@ -123,6 +118,7 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 		codeAlternatives = updateStatusOfCodeAlternatives(codeAlternatives, toreRelationships, len(annotationNames))
 	}
 
+	// parse the relevant fields into a struct
 	var relevantAgreementFields RelevantAgreementFields
 
 	relevantAgreementFields.Docs = docs
@@ -135,79 +131,6 @@ func getInfoFromAnnotations(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Failed to marshal relevantAgreementFields")
 	}
 	w.Write(finalRelevantFields)
-}
-
-// postAgreementTokenize Tokenize a document and return the result
-func initializeInfoFromAnnotations(
-	w http.ResponseWriter, annotationNames []string,
-) (
-	[]DocWrapper,
-	[]Token,
-	[]TORERelationship,
-	[]CodeAlternatives,
-	error,
-) {
-	var codes []CodeAlternatives
-	var tokens []Token
-	var docs []DocWrapper
-	var toreRelationships []TORERelationship
-
-	var indexCounter = 0
-	var relationshipIndexCounter = 0
-
-	for i, annotationName := range annotationNames {
-		annotation, err := RESTGetAnnotation(annotationName)
-		handleErrorWithResponse(w, err, "ERROR retrieving annotation")
-		if err != nil {
-			return *new([]DocWrapper), *new([]Token), *new([]TORERelationship), *new([]CodeAlternatives), err
-		}
-
-		log.Printf("Getting info from: " + annotationName)
-
-		// Relevant fields of Tokens and docs stay constant, so they can be filled with any annotation
-		if i == 0 {
-			tokens = annotation.Tokens
-			docs = annotation.Docs
-		}
-
-		// Necessary to get global ToreRelationships
-		var numberOfRelationshipsInAnnotation = len(annotation.TORERelationships)
-		for i, toreRel := range annotation.TORERelationships {
-			if toreRel.TOREEntity != nil && toreRel.Index != nil {
-				*annotation.TORERelationships[i].Index += relationshipIndexCounter
-			}
-		}
-
-		toreRelationships = append(toreRelationships, annotation.TORERelationships...)
-
-		// Fill the alternatives individually with every single code
-		for _, code := range annotation.Codes {
-			for i, _ := range code.RelationshipMemberships {
-				*code.RelationshipMemberships[i] += relationshipIndexCounter
-				for j, toreRel := range toreRelationships {
-					if toreRel.TOREEntity != nil && toreRel.Index != nil {
-						if *code.RelationshipMemberships[i] == *toreRel.Index {
-							*toreRelationships[j].TOREEntity = indexCounter
-						}
-					}
-				}
-			}
-			if len(code.Tokens) != 0 {
-				var code = CodeAlternatives{
-					Index:          indexCounter,
-					AnnotationName: annotationName,
-					MergeStatus:    "Pending",
-					Code:           code,
-				}
-				codes = append(codes, code)
-				indexCounter++
-			}
-		}
-		relationshipIndexCounter += numberOfRelationshipsInAnnotation
-
-	}
-
-	return docs, tokens, toreRelationships, codes, nil
 }
 
 // createAnnotationFromAgreement create a new annotation from an agreement
@@ -228,6 +151,7 @@ func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
 	agreement, err := RESTGetAgreement(agreementName)
 	handleErrorWithResponse(w, err, "ERROR retrieving annotation")
 
+	// It should not be possible, if the agreement is not completed
 	if agreement.IsCompleted == false {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "Failure: Agreement is not completed."})
@@ -235,7 +159,8 @@ func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
 	}
 	newAnnotation := makeAnnotation(agreement, newAnnotationName)
 
-	err = RESTPostStoreAnnotation(newAnnotation)
+	// parse result
+	err = RESTPostAnnotation(newAnnotation)
 	if err != nil {
 		fmt.Printf("Failed to POST new annotation")
 		hasError = true
@@ -249,99 +174,4 @@ func createAnnotationFromAgreement(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(ResponseMessage{Status: true, Message: "New annotation created from agreement."})
 	}
 	return
-}
-
-func makeAnnotation(agreement Agreement, newAnnotationName string) Annotation {
-	toreRelationships := agreement.TORERelationships
-	codeAlternatives := agreement.CodeAlternatives
-
-	acceptedCodes, acceptedToreRelationships := makeAcceptedToreRelationshipsAndCodes(toreRelationships, codeAlternatives)
-	updatedTokens := updateTokens(agreement, acceptedCodes)
-
-	var newAnnotation = Annotation{
-		UploadedAt:        time.Now(),
-		LastUpdated:       time.Now(),
-		Name:              newAnnotationName,
-		Dataset:           agreement.Dataset,
-		Docs:              agreement.Docs,
-		Tokens:            updatedTokens,
-		Codes:             acceptedCodes,
-		TORERelationships: acceptedToreRelationships,
-	}
-
-	return newAnnotation
-
-}
-
-func updateTokens(agreement Agreement, acceptedCodes []Code) []Token {
-	var newTokens []Token
-	for _, token := range agreement.Tokens {
-		numNameCodes := 0
-		numToreCodes := 0
-		for _, acceptedCode := range acceptedCodes {
-			for _, tokenInCode := range acceptedCode.Tokens {
-				if *tokenInCode == *token.Index {
-					if acceptedCode.Name != "" {
-						numNameCodes++
-					}
-					if acceptedCode.Tore != "" {
-						numToreCodes++
-					}
-				}
-			}
-		}
-		var newToken = Token{
-			Index:        token.Index,
-			Name:         token.Name,
-			Lemma:        token.Lemma,
-			Pos:          token.Pos,
-			NumNameCodes: numNameCodes,
-			NumToreCodes: numToreCodes,
-		}
-		newTokens = append(newTokens, newToken)
-	}
-	return newTokens
-}
-
-func makeAcceptedToreRelationshipsAndCodes(
-	toreRelationships []TORERelationship,
-	codeAlternatives []CodeAlternatives,
-) ([]Code, []TORERelationship) {
-	codeIndex := 0
-	var acceptedCodes []Code
-	var acceptedToreRelationships []TORERelationship
-
-	for i, codeAlternative := range codeAlternatives {
-		if codeAlternative.MergeStatus == "Accepted" {
-			*codeAlternatives[i].Code.Index = codeIndex
-			for _, usedRelIndex := range codeAlternative.Code.RelationshipMemberships {
-				for j, toreRel := range toreRelationships {
-					if toreRel.TOREEntity != nil {
-						if *usedRelIndex == *toreRel.Index {
-							*toreRelationships[j].TOREEntity = codeIndex
-							acceptedToreRelationships = append(acceptedToreRelationships, toreRel)
-							break
-						}
-					}
-				}
-			}
-			codeAlternatives[i].Code.RelationshipMemberships = []*int{}
-			acceptedCodes = append(acceptedCodes, codeAlternatives[i].Code)
-			codeIndex++
-		}
-	}
-
-	toreRelIndex := 0
-	for i, acceptedRel := range acceptedToreRelationships {
-		*acceptedToreRelationships[i].Index = toreRelIndex
-		for j, acceptedCode := range acceptedCodes {
-			if *acceptedCode.Index == *acceptedRel.TOREEntity {
-				acceptedCodes[j].RelationshipMemberships = append(acceptedCodes[j].RelationshipMemberships, acceptedToreRelationships[i].Index)
-				break
-			} else {
-			}
-		}
-		toreRelIndex++
-	}
-	return acceptedCodes, acceptedToreRelationships
 }

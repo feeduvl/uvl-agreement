@@ -22,9 +22,11 @@ func getKappas(
 		annotationSet[alternative.AnnotationName] = true
 	}
 
+	// This number can change, because categories, wordCodes and relationships can be added and removed
 	numberOfRels, numberOfCategories, numberOfWordCodes := getNumberOfRelsCategoriesAndWordCodes(nameSet, toreRelationships, toreCategories)
 
-	var numberOfCategoryAlternatives = numberOfRels * numberOfCategories * numberOfWordCodes
+	// The number of different codes possible for a token
+	var numberOfCodePossibilities = numberOfRels * numberOfCategories * numberOfWordCodes
 
 	// Get and encode relationships in agreement
 	var existingRelsMap = map[int]string{}
@@ -38,8 +40,11 @@ func getKappas(
 	relNameMap, categoryMap, wordCodeMap := createMaps(agreement, toreCategories, toreRelationships)
 
 	// Datamatrix containing codes for all tokens
-	dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens := fillDataMatrices(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfCategoryAlternatives)
-	fleissKappa, brennanKappa := calculateKappas(numberOfCategoryAlternatives, dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, unmberOfAssignedTokens)
+	dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, numberOfAssignedTokens := fillDataMatrices(agreement.CodeAlternatives, agreement, wordCodeMap, categoryMap, relNameMap, existingRelsMap, numberOfCategories, numberOfRels, len(annotationSet), numberOfCodePossibilities)
+	// Calculation of fleiss and brennan in the same method, because separating them would be more expensive
+	fleissKappa, brennanKappa := calculateKappas(numberOfCodePossibilities, dataMatrix, dataMatrixForRowCalculation, sumOfAllCells, numberOfAssignedTokens)
+
+	// Special cases, when Kappas are either smaller than 0 or None because some denominator is 0
 	if (fleissKappa < 0) || (fleissKappa != fleissKappa) {
 		fleissKappa = 0.0
 	}
@@ -96,6 +101,7 @@ func calculateKappas(
 	return fleissKappa, brennanKappa
 }
 
+// The position in the dataMatrix depends on categories, wordCodes and relationships, which have to be looked up in the respective maps
 func calculatePosition(
 	codeAlternative CodeAlternatives,
 	wordCodeMap map[string]int,
@@ -157,8 +163,7 @@ func fillDataMatrices(
 	var dataMatrix = make([][]int, len(tokenMap))
 	var dataMatrixForRowCalculations = make([][]int, len(tokenMap))
 	for i := 0; i < len(tokenMap); i++ {
-		// looping through the slice to declare
-		// slice of slice of correct length
+		// looping through the slice to declare slice of slices of correct length
 		dataMatrix[i] = make([]int, numberOfAlternatives)
 		dataMatrixForRowCalculations[i] = make([]int, numberOfAlternatives)
 	}
