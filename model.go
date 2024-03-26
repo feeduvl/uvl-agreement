@@ -45,6 +45,7 @@ type Annotation struct {
 	Tokens            []Token            `json:"tokens" bson:"tokens"`
 	Codes             []Code             `json:"codes" bson:"codes"`
 	TORERelationships []TORERelationship `json:"tore_relationships" bson:"tore_relationships"`
+	SentenceTokenisation_activated bool `json:"sentenceTokenisation_activated" bson:"sentenceTokenisation_activated"`
 }
 
 // AgreementStatistics model, the initial and current kappas. Name is unique
@@ -80,6 +81,7 @@ type Agreement struct {
 	AgreementStatistics []AgreementStatistics `json:"agreement_statistics" bson:"agreement_statistics"`
 
 	IsCompleted bool `json:"is_completed" bson:"is_completed"`
+	SentenceTokenizationEnabledForAgreement bool `json:"sentence_tokenization_enabled_for_agreement" bson:"sentence_tokenization_enabled_for_agreement"`
 }
 
 // ResponseMessage model
