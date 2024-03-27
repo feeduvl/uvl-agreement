@@ -20,7 +20,7 @@ func makeAnnotation(agreement Agreement, newAnnotationName string) Annotation {
 		Tokens:            updatedTokens,
 		Codes:             acceptedCodes,
 		TORERelationships: acceptedToreRelationships,
-		SentenceTokenisation_activated: agreement.SentenceTokenizationEnabledForAgreement,
+		SentenceTokenizationEnabledForAnnotation: agreement.SentenceTokenizationEnabledForAgreement,
 	}
 
 	return newAnnotation
